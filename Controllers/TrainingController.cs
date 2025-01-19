@@ -124,53 +124,28 @@ namespace TrainingManagement.Controllers
             return _context.Trainings.Any(e => e.Id == id);
         }
 
-        /*[AllowAnonymous]
-        public IActionResult Index()
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AssignTraining(int trainingId, string userId)
         {
-            if (!HttpContext)
-                return RedirectToAction("Login", "Account");
+            var user = await _context.Users.FindAsync(userId);
+            var training = await _context.Trainings.FindAsync(trainingId);
 
-            var userId = HttpContext.Session.GetString("UserId");
-            var availableTrainings = _context.Trainings
-                .Where(t => !t.UserTrainings.Any(ut => ut.UserId.Equals(userId)))
-                .ToList();
-            return View(availableTrainings);
-        }
-
-        public IActionResult MyTrainings()
-        {
-            var userId = HttpContext.Session.GetInt32("UserId");
-            if (!userId.HasValue)
-                return RedirectToAction("Login", "Account");
-
-            var completedTrainings = _context.UserTrainings
-                .Where(ut => ut.UserId.Equals(userId) && ut.IsCompleted)
-                .Select(ut => ut.Training)
-                .ToList();
-            return View(completedTrainings);
-        }
-
-        public IActionResult CompleteTraining(int trainingId)
-        {
-            var userId = HttpContext.Session.GetString("UserId");
-            if (userId != null)
-                return RedirectToAction("Login", "Account");
+            if (user == null || training == null)
+            {
+                return NotFound();
+            }
 
             var userTraining = new UserTraining
             {
-                UserId = userId != null ? userId : "anonymus",
+                UserId = userId,
                 TrainingId = trainingId,
-                IsCompleted = true
+                IsCompleted = false
             };
+
             _context.UserTrainings.Add(userTraining);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
-            return RedirectToAction("MyTrainings");
+            return RedirectToAction(nameof(Index));
         }
-
-        [Authorize(Roles = "Admin")]
-        public IActionResult CreateTraining() {
-            return View();
-        }*/
     }
 }

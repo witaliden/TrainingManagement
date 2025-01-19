@@ -27,12 +27,22 @@ namespace TrainingManagement.Configuration
         private async Task CreateUsers()
         {
             var admin = new User { UserName = "admin", Email = "admin@poczta.pl", IsAdmin = true, Name = "Jestem", Lastname = "Główny" };
-            await _userManager.CreateAsync(admin, "admin");
+            var createdAdmin = await _userManager.CreateAsync(admin, "Admin123!");
+
+            if (!createdAdmin.Succeeded)
+            {
+                // Logowanie błędu lub rzucenie wyjątku
+                throw new Exception($"Nie udało się utworzyć admina: {string.Join(", ", createdAdmin.Errors.Select(e => e.Description))}");
+            }
 
             for (int i = 1; i <= 10; i++)
             {
                 var employee = new User { UserName = $"employee{i}", Email = $"employee{i}@poczta.pl", IsAdmin = false, Name = "Pracuję-Tu", Lastname = $"{i} lat" };
-                await _userManager.CreateAsync(employee, "pracownik");
+                var createdEmployee = await _userManager.CreateAsync(employee, "Employee123!");
+                if (!createdEmployee.Succeeded)
+                {
+                    throw new Exception($"Nie udało się utworzyć pracownika {i}: {string.Join(", ", createdEmployee.Errors.Select(e => e.Description))}");
+                }
             }
         }
 
