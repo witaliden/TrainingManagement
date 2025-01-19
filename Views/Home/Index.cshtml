@@ -1,34 +1,60 @@
 ﻿@model DashboardViewModel
 
-<h2>Dashboard</h2>
-
-<div>
-    <canvas id="trainingProgressChart"></canvas>
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Ogólne statystyki</h5>
+                <p class="card-text">Wszystkie szkolenia: @Model.TotalTrainings</p>
+                <p class="card-text">Ukończone szkolenia: @Model.CompletedTrainingsCount</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Twój postęp</h5>
+                @if (Model.UserProgress != null)
+                {
+                    <p class="card-text">Ukończone: @Model.UserProgress.CompletedTrainings / @Model.UserProgress.TotalAssignedTrainings</p>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: @(Model.UserProgress.TotalAssignedTrainings > 0 ? (Model.UserProgress.CompletedTrainings * 100 / Model.UserProgress.TotalAssignedTrainings) : 0)%"></div>
+                    </div>
+                }
+                else
+                {
+                    <p class="card-text">Zaloguj się, aby zobaczyć swój postęp.</p>
+                }
+            </div>
+        </div>
+    </div>
 </div>
 
-@section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        var ctx = document.getElementById('trainingProgressChart').getContext('2d');
-        var chart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: @Html.Raw(Json.Serialize(Model.Labels)),
-                datasets: [{
-                    label: 'Completed Trainings',
-                    data: @Html.Raw(Json.Serialize(Model.CompletedTrainings)),
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Nadchodzące szkolenia</h5>
+                <ul class="list-group list-group-flush">
+                    @foreach (var training in Model.UpcomingTrainings)
+                    {
+                        <li class="list-group-item">@training.Title - @training.DueDate.ToShortDateString()</li>
                     }
-                }
-            }
-        });
-    </script>
-}
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Top 5 użytkowników</h5>
+                <ul class="list-group list-group-flush">
+                    @foreach (var user in Model.TopUsers)
+                    {
+                        <li class="list-group-item">@user.UserName - @user.CompletedTrainings ukończonych szkoleń</li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

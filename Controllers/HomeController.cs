@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TrainingManagement.Models;
@@ -12,22 +13,47 @@ namespace TrainingManagement.Controllers
 
         private readonly ApplicationDbContext _context;
 
-        public HomeController(ILogger<HomeController> logger, ApplicationDbContext context)
+        private readonly UserManager<User> _userManager;
+
+        public HomeController(ILogger<HomeController> logger, ApplicationDbContext context, UserManager<User> userManager)
         {
+            _userManager = userManager;
             _logger = logger;
             _context = context;
         }
 
         public async Task<IActionResult> Index()
         {
-            var users = await _context.Users.ToListAsync();
-            var userTrainings = await _context.UserTrainings.ToListAsync();
-
+            var currentUser = await _userManager.GetUserAsync(User);
             var viewModel = new DashboardViewModel
             {
-                Labels = users.Select(u => u.UserName).ToList(),
-                CompletedTrainings = users.Select(u => userTrainings.Count(ut => ut.UserId == u.Id && ut.IsCompleted)).ToList()
+                TotalTrainings = await _context.Trainings.CountAsync(),
+                CompletedTrainingsCount = await _context.UserTrainings.CountAsync(ut => ut.IsCompleted),
+                UpcomingTrainings = await _context.Trainings
+                    .Where(t => t.DueDate > DateTime.Now)
+                    .OrderBy(t => t.DueDate)
+                    .Take(5)
+                    .ToListAsync(),
+                TopUsers = await _context.Users
+                    .OrderByDescending(u => u.UserTrainings.Count(ut => ut.IsCompleted))
+                    .Take(5)
+                    .Select(u => new UserProgressViewModel
+                    {
+                        UserName = u.UserName,
+                        CompletedTrainings = u.UserTrainings.Count(ut => ut.IsCompleted)
+                    })
+                    .ToListAsync()
             };
+
+            if (currentUser != null)
+            {
+                viewModel.UserProgress = new UserProgressViewModel
+                {
+                    UserName = currentUser.UserName,
+                    CompletedTrainings = await _context.UserTrainings.CountAsync(ut => ut.UserId == currentUser.Id && ut.IsCompleted),
+                    TotalAssignedTrainings = await _context.UserTrainings.CountAsync(ut => ut.UserId == currentUser.Id)
+                };
+            }
 
             return View(viewModel);
         }
