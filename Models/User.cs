@@ -1,13 +1,13 @@
-﻿namespace TrainingManagement.Models
+﻿using Microsoft.AspNetCore.Identity;
+
+namespace TrainingManagement.Models
 {
-    public class User
+    public class User : IdentityUser
     {
-        public int Id { get; set; }
-        public required string Username { get; set; }
-        public required string Name { get; set; }
-        public required string LastName { get; set; }
-        public string Email { get; set; }
-        public required string Password { get; set; }
+
         public List<UserTraining>? UserTrainings { get; set; }
+        public bool IsAdmin { get; set; }
+        public required string Name { get; set; }
+        public required string Lastname { get; set; }
     }
 }

@@ -1,27 +1,36 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using TrainingManagement.Models;
 
 namespace TrainingManagement.Repository
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : IdentityDbContext<User>
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options)
         {
         }
-        public DbSet<TrainingManagement.Models.Training> Trainings { get; set; }
-        public DbSet<TrainingManagement.Models.User> Users { get; set; }
-        public DbSet<TrainingManagement.Models.UserTraining> UserTrainings { get; set; }
+
+        public DbSet<Training> Trainings { get; set; }
+        public DbSet<UserTraining> UserTrainings { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<TrainingManagement.Models.UserTraining>()
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<UserTraining>()
                 .HasKey(ut => new { ut.UserId, ut.TrainingId });
-            modelBuilder.Entity<TrainingManagement.Models.UserTraining>()
+
+            modelBuilder.Entity<UserTraining>()
                 .HasOne(ut => ut.User)
                 .WithMany(u => u.UserTrainings)
                 .HasForeignKey(ut => ut.UserId);
-            modelBuilder.Entity<TrainingManagement.Models.UserTraining>()
+
+            modelBuilder.Entity<UserTraining>()
                 .HasOne(ut => ut.Training)
                 .WithMany(t => t.UserTrainings)
                 .HasForeignKey(ut => ut.TrainingId);
         }
     }
+
 }
