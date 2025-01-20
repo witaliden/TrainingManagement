@@ -11,7 +11,7 @@ using TrainingManagement.Repository;
 namespace TrainingManagement.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250119171050_InitialCreate")]
+    [Migration("20250120005712_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

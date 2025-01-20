@@ -1,0 +1,28 @@
+﻿@model List<Training>
+
+<h2>Zarządzanie szkoleniami</h2>
+
+<a asp-action="Create" class="btn btn-primary mb-3">Utwórz nowe szkolenie</a>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Tytuł</th>
+            <th>Opis</th>
+            <th>Akcje</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var training in Model)
+        {
+            <tr>
+                <td>@training.Title</td>
+                <td>@training.Description</td>
+                <td>
+                    <a asp-action="TrainingDetails" asp-route-id="@training.Id" class="btn btn-info">Szczegóły</a>
+                    <a asp-action="AssignTraining" asp-route-id="@training.Id" class="btn btn-secondary">Przypisz użytkowników</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,0 +1,21 @@
+﻿@model Training
+
+<h2>Szczegóły szkolenia: @Model.Title</h2>
+
+<h3>Użytkownicy, którzy nie ukończyli szkolenia:</h3>
+<ul>
+    @foreach (var ut in Model.UserTrainings.Where(ut => !ut.IsCompleted))
+    {
+        <li>@ut.User.UserName</li>
+    }
+</ul>
+
+<h3>Użytkownicy, którzy ukończyli szkolenie:</h3>
+<ul>
+    @foreach (var ut in Model.UserTrainings.Where(ut => ut.IsCompleted))
+    {
+        <li>@ut.User.UserName - Ukończono: @ut.CompletionDateTime</li>
+    }
+</ul>
+
+<a asp-action="AssignTraining" asp-route-id="@Model.Id" class="btn btn-primary">Przypisz użytkowników</a>
