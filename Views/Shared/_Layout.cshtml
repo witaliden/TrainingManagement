@@ -19,9 +19,6 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
                         @if (User.IsInRole("Admin"))
                         {
                             <li class="nav-item">
@@ -37,30 +34,30 @@
                         @if (User.IsInRole("Admin"))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index">Users</a>
+                                <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index">Pracownicy</a>
                             </li>
                         }
                     </ul>
                     <ul class="navbar-nav">
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Account
+                                Konto
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                                 @if (User.Identity.IsAuthenticated)
                                 {
-                                    <li><a class="dropdown-item" asp-area="" asp-controller="Account" asp-action="Profile">Profil</a></li>
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Account" asp-action="Profile">Moje dane</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
-                                            <button type="submit" class="dropdown-item">Logout</button>
+                                            <button type="submit" class="dropdown-item">Wyloguj</button>
                                         </form>
                                     </li>
                                 }
                                 else
                                 {
-                                    <li><a class="dropdown-item" asp-area="" asp-controller="Account" asp-action="Login">Login</a></li>
-                                    <li><a class="dropdown-item" asp-area="" asp-controller="Account" asp-action="Register">Register</a></li>
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Account" asp-action="Login">Zaloguj</a></li>
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Account" asp-action="Register">Utwórz konto</a></li>
                                 }
                             </ul>
                         </li>

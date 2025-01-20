@@ -1,0 +1,37 @@
+﻿@model UserDetailsViewModel
+
+<h2>Szczegóły pracownika</h2>
+
+<dl class="row">
+    <dt class="col-sm-2">Email:</dt>
+    <dd class="col-sm-10">@Model.User.Email</dd>
+    <dt class="col-sm-2">Imię:</dt>
+    <dd class="col-sm-10">@Model.User.Name</dd>
+    <dt class="col-sm-2">Nazwisko:</dt>
+    <dd class="col-sm-10">@Model.User.Lastname</dd>
+</dl>
+
+<h3>Szkolenia</h3>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Tytuł</th>
+            <th>Status</th>
+            <th>Data ukończenia</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var ut in Model.UserTrainings)
+        {
+            <tr>
+                <td>@ut.Training.Title</td>
+                <td>@(ut.IsCompleted ? "Ukończone" : "Nieukończone")</td>
+                <td>@(ut.CompletionDateTime?.ToShortDateString() ?? "-")</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-action="AssignTrainings" asp-route-id="@Model.User.Id" class="btn btn-primary">Przypisz szkolenia</a>
+<a asp-action="Index" class="btn btn-secondary">Powrót do listy</a>

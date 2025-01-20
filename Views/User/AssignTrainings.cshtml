@@ -1,0 +1,30 @@
+﻿@model AssignTrainingsViewModel
+
+<h2>Przypisz szkolenia dla @Model.UserName</h2>
+
+<form asp-action="AssignTrainings">
+    <input type="hidden" asp-for="UserId" />
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Tytuł szkolenia</th>
+                <th>Przypisane</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.Trainings.Count; i++)
+            {
+                <tr>
+                    <td>@Model.Trainings[i].Title</td>
+                    <td>
+                        <input type="hidden" asp-for="@Model.Trainings[i].TrainingId" />
+                        <input type="checkbox" asp-for="@Model.Trainings[i].IsAssigned" />
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <button type="submit" class="btn btn-primary">Zapisz zmiany</button>
+</form>
+
+<a asp-action="Details" asp-route-id="@Model.UserId" class="btn btn-secondary">Powrót do szczegółów</a>
