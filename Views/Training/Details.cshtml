@@ -1,0 +1,32 @@
+﻿@model UserTraining
+
+<h2>Szczegóły szkolenia</h2>
+
+<dl class="row">
+    <dt class="col-sm-2">Tytuł</dt>
+    <dd class="col-sm-10">@Model.Training.Title</dd>
+
+    <dt class="col-sm-2">Opis</dt>
+    <dd class="col-sm-10">@Model.Training.Description</dd>
+
+    <dt class="col-sm-2">Link</dt>
+    <dd class="col-sm-10"><a href="@Model.Training.Link" target="_blank">Otwórz szkolenie</a></dd>
+
+    <dt class="col-sm-2">Status</dt>
+    <dd class="col-sm-10">@(Model.IsCompleted ? "Ukończone" : "W trakcie")</dd>
+
+    @if (Model.IsCompleted)
+    {
+        <dt class="col-sm-2">Data ukończenia</dt>
+        <dd class="col-sm-10">@Model.CompletionDateTime?.ToShortDateString()</dd>
+    }
+</dl>
+
+@if (!Model.IsCompleted)
+{
+    <form asp-action="CompleteTraining" asp-route-id="@Model.TrainingId" method="post">
+        <button type="submit" class="btn btn-success">Potwierdź ukończenie szkolenia</button>
+    </form>
+}
+
+<a asp-action="Index" class="btn btn-secondary mt-3">Powrót do listy szkoleń</a>

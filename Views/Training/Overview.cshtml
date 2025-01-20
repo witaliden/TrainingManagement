@@ -1,25 +1,27 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
-    ViewData["Title"] = "Treningi";
-}
+﻿@model IEnumerable<UserTraining>
 
-<div class="text-center">
-    <h2>Dostępne treningi</h2>
-    <a asp-action="Create" class="btn btn-primary">Dodaj nowy trening</a>
-    <a asp-action="MyTrainings" class="btn btn-secondary">Moje treningi</a>
-</div>
+<h2>Moje szkolenia</h2>
 
-<ul>
-    @foreach (var training in Model)
-    {
-        <li>
-            @training.Name - @training.Date
-            <form asp-action="CompleteTraining" method="post">
-                <input type="hidden" name="trainingId" value="@training.Id" />
-                <button type="submit">Complete</button>
-            </form>
-        </li>
-    }
-</ul>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Tytuł</th>
+            <th>Status</th>
+            <th>Data ukończenia</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Training.Title</td>
+                <td>@(item.IsCompleted ? "Ukończone" : "W trakcie")</td>
+                <td>@(item.CompletionDateTime?.ToShortDateString() ?? "-")</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@item.TrainingId" class="btn btn-primary">Szczegóły</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
