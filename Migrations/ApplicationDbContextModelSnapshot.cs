@@ -189,9 +189,6 @@ namespace TrainingManagement.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("INTEGER");
 
-                    b.Property<bool>("IsAdmin")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("Lastname")
                         .IsRequired()
                         .HasColumnType("TEXT");

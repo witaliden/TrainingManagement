@@ -22,6 +22,9 @@
                         @if (User.IsInRole("Admin"))
                         {
                             <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index">Pracownicy</a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Training" asp-action="AdminOverview">Szkolenia</a>
                             </li>
                         }
@@ -29,12 +32,6 @@
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Training" asp-action="Overview">Szkolenia</a>
-                            </li>
-                        }
-                        @if (User.IsInRole("Admin"))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index">Pracownicy</a>
                             </li>
                         }
                     </ul>
@@ -48,11 +45,7 @@
                                 {
                                     <li><a class="dropdown-item" asp-area="" asp-controller="Account" asp-action="Profile">Moje dane</a></li>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
-                                            <button type="submit" class="dropdown-item">Wyloguj</button>
-                                        </form>
-                                    </li>
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Account" asp-action="Logout">Wyloguj</a></li>
                                 }
                                 else
                                 {

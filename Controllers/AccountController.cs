@@ -28,7 +28,7 @@ namespace TrainingManagement.Controllers
             var result = await _signInManager.PasswordSignInAsync(username, password, isPersistent: false, lockoutOnFailure: false);
             if (result.Succeeded)
             {
-                return RedirectToAction("Index", "Training");
+                return RedirectToAction("Index", "Home");
             }
             return View();
         }

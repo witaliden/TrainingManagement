@@ -11,7 +11,7 @@ using TrainingManagement.Repository;
 namespace TrainingManagement.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250120005712_InitialCreate")]
+    [Migration("20250127110113_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -190,9 +190,6 @@ namespace TrainingManagement.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsAdmin")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Lastname")

@@ -33,7 +33,7 @@ namespace TrainingManagement.Configuration
                 await _roleManager.CreateAsync(new IdentityRole("Admin"));
             }
 
-            var admin = new User { UserName = "admin", Email = "admin@poczta.pl", IsAdmin = true, Name = "Jestem", Lastname = "Główny" };
+            var admin = new User { UserName = "admin", Email = "admin@poczta.pl", Name = "Jestem", Lastname = "Główny" };
             var createdAdmin = await _userManager.CreateAsync(admin, "Admin123!");
 
             if (createdAdmin.Succeeded)
@@ -43,7 +43,7 @@ namespace TrainingManagement.Configuration
 
             for (int i = 1; i <= 10; i++)
             {
-                var employee = new User { UserName = $"employee{i}", Email = $"employee{i}@poczta.pl", IsAdmin = false, Name = "Pracuję-Tu", Lastname = $"{i} lat" };
+                var employee = new User { UserName = $"employee{i}", Email = $"employee{i}@poczta.pl", Name = "Pracuję-Tu", Lastname = $"{i} lat" };
                 var createdEmployee = await _userManager.CreateAsync(employee, "Employee123!");
                 if (!createdEmployee.Succeeded)
                 {
