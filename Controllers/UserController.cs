@@ -140,5 +140,36 @@ namespace TrainingManagement.Controllers
 
             return RedirectToAction(nameof(Details), new { id = model.UserId });
         }
+
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ChangeUserPassword(string userId, string newPassword)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            // Generuj token resetowania hasła
+            var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            // Resetuj hasło użytkownika
+            var result = await _userManager.ResetPasswordAsync(user, resetToken, newPassword);
+
+            if (result.Succeeded)
+            {
+                TempData["StatusMessage"] = "Hasło zostało zmienione pomyślnie.";
+            }
+            else
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+            }
+
+            return RedirectToAction(nameof(Details), new { id = userId });
+        }
+
     }
 }

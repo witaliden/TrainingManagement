@@ -35,3 +35,21 @@
 
 <a asp-action="AssignTrainings" asp-route-id="@Model.User.Id" class="btn btn-primary">Przypisz szkolenia</a>
 <a asp-action="Index" class="btn btn-secondary">Powrót do listy</a>
+@if (User.IsInRole("Admin"))
+{
+    <div class="card mt-3">
+        <div class="card-header">
+            <h5>Zmiana hasła użytkownika</h5>
+        </div>
+        <div class="card-body">
+            <form asp-action="ChangeUserPassword" method="post">
+                <input type="hidden" name="userId" value="@Model.User.Id" />
+                <div class="form-group">
+                    <label>Nowe hasło</label>
+                    <input type="password" name="newPassword" class="form-control" required />
+                </div>
+                <button type="submit" class="btn btn-primary mt-2">Zmień hasło</button>
+            </form>
+        </div>
+    </div>
+}
