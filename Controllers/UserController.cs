@@ -172,5 +172,37 @@ namespace TrainingManagement.Controllers
             return RedirectToAction(nameof(Details), new { id = userId });
         }
 
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteUser(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            // Nie pozwól administratorowi usunąć własnego konta
+            if (user.UserName == User.Identity.Name)
+            {
+                TempData["ErrorMessage"] = "Nie możesz usunąć własnego konta.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var result = await _userManager.DeleteAsync(user);
+            if (result.Succeeded)
+            {
+                TempData["SuccessMessage"] = "Użytkownik został usunięty.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError("", error.Description);
+            }
+
+            TempData["ErrorMessage"] = "Wystąpił błąd podczas usuwania użytkownika.";
+            return RedirectToAction(nameof(Index));
+        }
     }
 }

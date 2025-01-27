@@ -2,6 +2,20 @@
 
 <h2>Lista pracowników</h2>
 
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
 <p>
     <a asp-action="Create" class="btn btn-primary">Utwórz nowego pracownika</a>
 </p>
@@ -25,6 +39,14 @@
                 <td>
                     <a asp-action="Details" asp-route-id="@user.Id" class="btn btn-info">Szczegóły</a>
                     <a asp-action="AssignTrainings" asp-route-id="@user.Id" class="btn btn-secondary">Przypisz szkolenia</a>
+                    <form asp-action="DeleteUser" asp-route-userId="@user.Id" method="post"
+                          onsubmit="return confirm('Czy na pewno chcesz usunąć tego użytkownika?');"
+                          style="display: inline;">
+                        <button type="submit" class="btn btn-danger btn-sm"
+                        @(user.UserName == User.Identity.Name ? "disabled" : "")>
+                            Usuń
+                        </button>
+                    </form>
                 </td>
             </tr>
         }
