@@ -6,42 +6,51 @@ namespace TrainingManagement.Models
     {
         [Required]
         [EmailAddress]
-        public string Email { get; set; }
+        public required string Email { get; set; }
 
         [Required]
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         [Required]
-        public string Lastname { get; set; }
+        public required string Lastname { get; set; }
 
         [Required]
         [DataType(DataType.Password)]
-        public string Password { get; set; }
+        public required string Password { get; set; }
 
         [DataType(DataType.Password)]
         [Compare("Password", ErrorMessage = "Hasła nie są identyczne.")]
-        public string ConfirmPassword { get; set; }
+        public required string ConfirmPassword { get; set; }
+    }
+
+    public class EditUserViewModel
+    {
+        public required string Id { get; set; }
+
+        [Required(ErrorMessage = "Email jest wymagany")]
+        [EmailAddress(ErrorMessage = "Nieprawidłowy format adresu email")]
+        public required string Email { get; set; }
+
+        [Required(ErrorMessage = "Imię jest wymagane")]
+        public required string Name { get; set; }
+
+        [Required(ErrorMessage = "Nazwisko jest wymagane")]
+        public required string Lastname { get; set; }
+
+        // Opcjonalne pole na nowe hasło
+        [DataType(DataType.Password)]
+        public string? NewPassword { get; set; }
+
+        [DataType(DataType.Password)]
+        [Compare("NewPassword", ErrorMessage = "Hasła nie są identyczne")]
+        public string? ConfirmPassword { get; set; }
     }
 
     public class UserDetailsViewModel
     {
-        public User User { get; set; }
-        public List<UserTraining> UserTrainings { get; set; }
+        public required User User { get; set; }
+        public List<UserTraining>? UserTrainings { get; set; }
         public bool IsLockedOut { get; set; }
-    }
-
-    public class AssignTrainingsViewModel
-    {
-        public string UserId { get; set; }
-        public string UserName { get; set; }
-        public List<TrainingAssignmentViewModel> Trainings { get; set; }
-    }
-
-    public class TrainingAssignmentViewModel
-    {
-        public int TrainingId { get; set; }
-        public string Title { get; set; }
-        public bool IsAssigned { get; set; }
     }
 
 }

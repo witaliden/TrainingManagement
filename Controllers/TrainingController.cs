@@ -116,11 +116,11 @@ public class TrainingController : Controller
         }
 
         var users = await _userManager.Users.ToListAsync();
-        var viewModel = new AssignTrainingViewModel
+        var viewModel = new TrainingViewModel
         {
             TrainingId = id,
             TrainingTitle = training.Title,
-            Users = users.Select(u => new UserViewModel
+            Users = users.Select(u => new UserAssignedViewModel
             {
                 Id = u.Id,
                 UserName = u.UserName,
@@ -133,7 +133,7 @@ public class TrainingController : Controller
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> AssignTraining(AssignTrainingViewModel viewModel)
+    public async Task<IActionResult> AssignTraining(TrainingViewModel viewModel)
     {
         var training = await _context.Trainings.FindAsync(viewModel.TrainingId);
         if (training == null)

@@ -48,7 +48,7 @@
                     <label>Nowe hasło</label>
                     <input type="password" name="newPassword" class="form-control" required />
                 </div>
-                <button type="submit" class="btn btn-primary mt-2">Zmień hasło</button>
+                <button type="submit" class="btn btn-primary mt-2" disabled="@(!User.IsInRole("Admin"))">Zmień hasło</button>
             </form>
         </div>
     </div>
