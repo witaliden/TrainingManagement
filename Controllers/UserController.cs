@@ -52,6 +52,71 @@ namespace TrainingManagement.Controllers
             return View(model);
         }
 
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Details(EditUserViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                // Pobierz ponownie dane szkoleń, aby zachować je w widoku
+                var userTrainings = await _context.UserTrainings
+                    .Include(ut => ut.Training)
+                    .Where(ut => ut.UserId == model.Id)
+                    .OrderBy(ut => ut.IsCompleted)
+                    .ThenBy(ut => ut.Training.DueDate)
+                    .ToListAsync();
+
+                var viewModel = new UserDetailsViewModel
+                {
+                    User = await _userManager.FindByIdAsync(model.Id),
+                    UserTrainings = userTrainings
+                };
+                return View(viewModel);
+            }
+
+            var user = await _userManager.FindByIdAsync(model.Id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            user.Email = model.Email;
+            user.UserName = model.Email;
+            user.Name = model.Name;
+            user.Lastname = model.Lastname;
+
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!string.IsNullOrEmpty(model.NewPassword))
+            {
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var passwordResult = await _userManager.ResetPasswordAsync(user, token, model.NewPassword);
+
+                if (!passwordResult.Succeeded)
+                {
+                    foreach (var error in passwordResult.Errors)
+                    {
+                        ModelState.AddModelError(string.Empty, error.Description);
+                    }
+                }
+            }
+
+            if (result.Succeeded)
+            {
+                TempData["SuccessMessage"] = "Dane użytkownika zostały zaktualizowane.";
+            }
+            else
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+            }
+
+            return RedirectToAction(nameof(Details), new { id = model.Id });
+        }
+
+
         public async Task<IActionResult> Details(string id)
         {
             var user = await _userManager.FindByIdAsync(id);

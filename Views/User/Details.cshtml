@@ -2,14 +2,70 @@
 
 <h2>Szczegóły pracownika</h2>
 
-<dl class="row">
-    <dt class="col-sm-2">Email:</dt>
-    <dd class="col-sm-10">@Model.User.Email</dd>
-    <dt class="col-sm-2">Imię:</dt>
-    <dd class="col-sm-10">@Model.User.Name</dd>
-    <dt class="col-sm-2">Nazwisko:</dt>
-    <dd class="col-sm-10">@Model.User.Lastname</dd>
-</dl>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3>Dane użytkownika</h3>
+            </div>
+            <div class="card-body">
+                <form asp-action="Details" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <input type="hidden" name="Id" value="@Model.User.Id" />
+
+                    <div class="form-group mb-3">
+                        <label>Email</label>
+                        <input type="email" name="Email" class="form-control" value="@Model.User.Email" />
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label>Imię</label>
+                        <input type="text" name="Name" class="form-control" value="@Model.User.Name" />
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label>Nazwisko</label>
+                        <input type="text" name="Lastname" class="form-control" value="@Model.User.Lastname" />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Zapisz zmiany</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3>Zmiana hasła</h3>
+            </div>
+            <div class="card-body">
+                <form asp-action="ChangeUserPassword" method="post">
+                    <input type="hidden" name="userId" value="@Model.User.Id" />
+                    
+                    <div class="form-group mb-3">
+                        <label>Nowe hasło</label>
+                        <input type="password" name="newPassword" class="form-control" required />
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label>Potwierdź nowe hasło</label>
+                        <input type="password" name="confirmPassword" class="form-control" required />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Zmień hasło</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
 <h3>Szkolenia</h3>
 
@@ -26,7 +82,7 @@
         {
             <tr>
                 <td>@ut.Training.Title</td>
-                <td>@(ut.IsCompleted ? "Ukończone" : "Nieukończone")</td>
+                <td>@(ut.IsCompleted ? "Ukończone" : "W trakcie")</td>
                 <td>@(ut.CompletionDateTime?.ToShortDateString() ?? "-")</td>
             </tr>
         }
@@ -35,21 +91,3 @@
 
 <a asp-action="AssignTrainings" asp-route-id="@Model.User.Id" class="btn btn-primary">Przypisz szkolenia</a>
 <a asp-action="Index" class="btn btn-secondary">Powrót do listy</a>
-@if (User.IsInRole("Admin"))
-{
-    <div class="card mt-3">
-        <div class="card-header">
-            <h5>Zmiana hasła użytkownika</h5>
-        </div>
-        <div class="card-body">
-            <form asp-action="ChangeUserPassword" method="post">
-                <input type="hidden" name="userId" value="@Model.User.Id" />
-                <div class="form-group">
-                    <label>Nowe hasło</label>
-                    <input type="password" name="newPassword" class="form-control" required />
-                </div>
-                <button type="submit" class="btn btn-primary mt-2" disabled="@(!User.IsInRole("Admin"))">Zmień hasło</button>
-            </form>
-        </div>
-    </div>
-}
