@@ -6,7 +6,13 @@ namespace TrainingManagement.Models
     {
         public required string UserName { get; set; }
         public required string Email { get; set; }
+
+        [Required(ErrorMessage = "Imię jest wymagane")]
+        [DataType(DataType.Text)]
         public required string Name { get; set; }
+
+        [Required(ErrorMessage = "Nazwisko jest wymagane")]
+        [DataType(DataType.Text)]
         public required string Lastname { get; set; }
 
         [Required(ErrorMessage = "Aktualne hasło jest wymagane")]

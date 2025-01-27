@@ -81,17 +81,17 @@ namespace TrainingManagement.Controllers
             {
                 return NotFound();
             }
-            else {
-                var model = new ProfileViewModel
-                {
-                    UserName = user.UserName,
-                    Email = user.Email,
-                    Name = user.Name,
-                    Lastname = user.Lastname
-                };
 
-                return View(model);
-            }
+            var model = new ProfileViewModel
+            {
+                UserName = user.UserName,
+                Email = user.Email,
+                Name = user.Name,
+                Lastname = user.Lastname
+            };
+
+            ViewBag.IsAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+            return View(model);
         }
 
         [Authorize]
@@ -161,6 +161,54 @@ namespace TrainingManagement.Controllers
             return RedirectToAction(nameof(Profile));
         }
 
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateUserProfile(ProfileViewModel model)
+        {
+            var user = await _userManager.FindByNameAsync(model.UserName);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            user.Name = model.Name;
+            user.Lastname = model.Lastname;
+
+            var result = await _userManager.UpdateAsync(user);
+            if (result.Succeeded)
+            {
+                TempData["StatusMessage"] = "Dane użytkownika zostały zaktualizowane.";
+
+                // Jeśli podano nowe hasło, zmień je również
+                if (!string.IsNullOrEmpty(model.NewPassword))
+                {
+                    var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+                    var passwordResult = await _userManager.ResetPasswordAsync(user, resetToken, model.NewPassword);
+
+                    if (passwordResult.Succeeded)
+                    {
+                        TempData["StatusMessage"] = "Dane użytkownika i hasło zostały zaktualizowane.";
+                    }
+                    else
+                    {
+                        foreach (var error in passwordResult.Errors)
+                        {
+                            ModelState.AddModelError(string.Empty, error.Description);
+                        }
+                        return View("Profile", model);
+                    }
+                }
+
+                return RedirectToAction(nameof(Profile));
+            }
+
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+            return View("Profile", model);
+        }
 
 
         public async Task<IActionResult> Logout()

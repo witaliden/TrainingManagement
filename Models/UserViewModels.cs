@@ -27,6 +27,7 @@ namespace TrainingManagement.Models
     {
         public User User { get; set; }
         public List<UserTraining> UserTrainings { get; set; }
+        public bool IsLockedOut { get; set; }
     }
 
     public class AssignTrainingsViewModel
