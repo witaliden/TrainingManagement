@@ -37,6 +37,7 @@ namespace TrainingManagement.Controllers
             {
                 var user = new User { UserName = model.Email, Email = model.Email, Name = model.Name, Lastname = model.Lastname };
                 var result = await _userManager.CreateAsync(user, model.Password);
+                result = await _userManager.SetLockoutEnabledAsync(user, false);
 
                 if (result.Succeeded)
                 {

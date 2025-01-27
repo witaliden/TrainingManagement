@@ -28,8 +28,15 @@ namespace TrainingManagement.Controllers
             var result = await _signInManager.PasswordSignInAsync(username, password, isPersistent: false, lockoutOnFailure: false);
             if (result.Succeeded)
             {
+                var user = await _userManager.FindByNameAsync(username);
+                if (await _userManager.HasPasswordAsync(user) &&
+                    !await _userManager.GetLockoutEnabledAsync(user))
+                {
+                    return RedirectToAction("ChangePassword", "Account");
+                }
                 return RedirectToAction("Index", "Home");
             }
+            ModelState.AddModelError(string.Empty, "Login lub hasło niepoprawne");
             return View();
         }
 
@@ -74,6 +81,28 @@ namespace TrainingManagement.Controllers
             {
                 return NotFound();
             }
+            else {
+                var model = new ProfileViewModel
+                {
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    Name = user.Name,
+                    Lastname = user.Lastname
+                };
+
+                return View(model);
+            }
+        }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> ChangePassword()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return NotFound();
+            }
 
             var model = new ProfileViewModel
             {
@@ -85,6 +114,7 @@ namespace TrainingManagement.Controllers
 
             return View(model);
         }
+
 
         [HttpPost]
         [Authorize]
@@ -102,6 +132,18 @@ namespace TrainingManagement.Controllers
                 return NotFound();
             }
 
+            var passwordValidator = new PasswordValidator<User>();
+            var result = await passwordValidator.ValidateAsync(_userManager, null, model.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+                return View(model);
+            }
+
             var changePasswordResult = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
             if (!changePasswordResult.Succeeded)
             {
@@ -113,6 +155,7 @@ namespace TrainingManagement.Controllers
             }
 
             await _signInManager.RefreshSignInAsync(user);
+            await _userManager.SetLockoutEnabledAsync(user, true);
             TempData["StatusMessage"] = "Twoje hasło zostało zmienione.";
 
             return RedirectToAction(nameof(Profile));

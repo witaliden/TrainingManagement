@@ -14,6 +14,19 @@ builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    options.Password = new PasswordOptions
+    {
+        RequiredLength = 14,
+        RequireDigit = true,
+        RequireLowercase = true,
+        RequireUppercase = true,
+        RequireNonAlphanumeric = true,
+        RequiredUniqueChars = 1
+    };
+});
+
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddScoped<DataInitializerService>();
