@@ -60,12 +60,37 @@
                         <input type="password" name="confirmPassword" class="form-control" required />
                     </div>
 
-                    <button type="submit" class="btn btn-primary">Zmień hasło</button>
+                    <button type="submit" class="btn btn-primary" disabled="@(!User.IsInRole("Admin"))">Zmień hasło</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+<div class="card mb-3">
+    <div class="card-header">
+        <h3>Zarządzanie kontem</h3>
+    </div>
+    <div class="card-body">
+        <form asp-action="ToggleUserLock" method="post" style="display: inline;">
+            <input type="hidden" name="userId" value="@Model.User.Id" />
+            <button type="submit" class="btn @(Model.IsLockedOut ? "btn-success" : "btn-warning")"
+            @(Model.User.UserName == User.Identity.Name ? "disabled" : "")>
+                @(Model.IsLockedOut ? "Odblokuj konto" : "Zablokuj konto")
+            </button>
+        </form>
+
+        <form asp-action="DeleteUser" method="post" style="display: inline;"
+              onsubmit="return confirm('Czy na pewno chcesz usunąć tego użytkownika?');">
+            <input type="hidden" name="userId" value="@Model.User.Id" />
+            <button type="submit" class="btn btn-danger"
+            @(Model.User.UserName == User.Identity.Name ? "disabled" : "")>
+                Usuń konto
+            </button>
+        </form>
+    </div>
+</div>
+
 
 <h3>Szkolenia</h3>
 

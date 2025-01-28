@@ -141,6 +141,103 @@ namespace TrainingManagement.Controllers
             return View(viewModel);
         }
 
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ToggleUserLock(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            // Nie pozwól administratorowi zablokować własnego konta
+            if (user.UserName == User.Identity.Name)
+            {
+                TempData["ErrorMessage"] = "Nie możesz zablokować własnego konta.";
+                return RedirectToAction(nameof(Details), new { id = userId });
+            }
+
+            if (await _userManager.IsLockedOutAsync(user))
+            {
+                // Odblokuj konto
+                await _userManager.SetLockoutEndDateAsync(user, null);
+                TempData["SuccessMessage"] = "Konto zostało odblokowane.";
+            }
+            else
+            {
+                // Zablokuj konto
+                await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
+                TempData["SuccessMessage"] = "Konto zostało zablokowane.";
+            }
+
+            return RedirectToAction(nameof(Details), new { id = userId });
+        }
+
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ChangeUserPassword(string userId, string newPassword)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            // Generuj token resetowania hasła
+            var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            // Resetuj hasło użytkownika
+            var result = await _userManager.ResetPasswordAsync(user, resetToken, newPassword);
+
+            if (result.Succeeded)
+            {
+                TempData["StatusMessage"] = "Hasło zostało zmienione pomyślnie.";
+            }
+            else
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+            }
+
+            return RedirectToAction(nameof(Details), new { id = userId });
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteUser(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            // Nie pozwól administratorowi usunąć własnego konta
+            if (user.UserName == User.Identity.Name)
+            {
+                TempData["ErrorMessage"] = "Nie możesz usunąć własnego konta.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var result = await _userManager.DeleteAsync(user);
+            if (result.Succeeded)
+            {
+                TempData["SuccessMessage"] = "Użytkownik został usunięty.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError("", error.Description);
+            }
+
+            TempData["ErrorMessage"] = "Wystąpił błąd podczas usuwania użytkownika.";
+            return RedirectToAction(nameof(Index));
+        }
+
+
         public async Task<IActionResult> AssignTrainings(string id)
         {
             var user = await _userManager.FindByIdAsync(id);
@@ -207,67 +304,5 @@ namespace TrainingManagement.Controllers
             return RedirectToAction(nameof(Details), new { id = model.UserId });
         }
 
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> ChangeUserPassword(string userId, string newPassword)
-        {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            // Generuj token resetowania hasła
-            var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
-
-            // Resetuj hasło użytkownika
-            var result = await _userManager.ResetPasswordAsync(user, resetToken, newPassword);
-
-            if (result.Succeeded)
-            {
-                TempData["StatusMessage"] = "Hasło zostało zmienione pomyślnie.";
-            }
-            else
-            {
-                foreach (var error in result.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
-            }
-
-            return RedirectToAction(nameof(Details), new { id = userId });
-        }
-
-        [HttpPost]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> DeleteUser(string userId)
-        {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            // Nie pozwól administratorowi usunąć własnego konta
-            if (user.UserName == User.Identity.Name)
-            {
-                TempData["ErrorMessage"] = "Nie możesz usunąć własnego konta.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            var result = await _userManager.DeleteAsync(user);
-            if (result.Succeeded)
-            {
-                TempData["SuccessMessage"] = "Użytkownik został usunięty.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError("", error.Description);
-            }
-
-            TempData["ErrorMessage"] = "Wystąpił błąd podczas usuwania użytkownika.";
-            return RedirectToAction(nameof(Index));
-        }
     }
 }
