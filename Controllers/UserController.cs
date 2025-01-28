@@ -174,6 +174,24 @@ namespace TrainingManagement.Controllers
             return RedirectToAction(nameof(Details), new { id = userId });
         }
 
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> SetPasswordExpiration(string userId, int daysValid)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            user.PasswordExpirationDate = DateTime.UtcNow.AddDays(daysValid);
+            await _userManager.UpdateAsync(user);
+
+            TempData["SuccessMessage"] = $"Hasło będzie ważne przez {daysValid} dni.";
+            return RedirectToAction(nameof(Details), new { id = userId });
+        }
+
+
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ChangeUserPassword(string userId, string newPassword)
         {

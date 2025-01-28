@@ -65,13 +65,28 @@
             </div>
         </div>
     </div>
+    <div class="card mb-3">
+        <div class="card-header">
+            <h3>Ustawienia hasła</h3>
+        </div>
+        <div class="card-body">
+            <form asp-action="SetPasswordExpiration" method="post">
+                <input type="hidden" name="userId" value="@Model.User.Id" />
+                <div class="form-group">
+                    <label>Liczba dni ważności hasła</label>
+                    <input type="number" name="daysValid" class="form-control" min="1" required />
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">Ustaw ważność hasła</button>
+            </form>
+        </div>
+    </div>
 </div>
 
 <div class="card mb-3">
     <div class="card-header">
         <h3>Zarządzanie kontem</h3>
     </div>
-    <div class="card-body">
+    <div class="card-body"> 
         <form asp-action="ToggleUserLock" method="post" style="display: inline;">
             <input type="hidden" name="userId" value="@Model.User.Id" />
             <button type="submit" class="btn @(Model.IsLockedOut ? "btn-success" : "btn-warning")"

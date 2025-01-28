@@ -29,7 +29,11 @@ namespace TrainingManagement.Controllers
             if (result.Succeeded)
             {
                 var user = await _userManager.FindByNameAsync(username);
-                if (await _userManager.HasPasswordAsync(user) &&
+                if (user.PasswordExpirationDate.HasValue
+                    && user.PasswordExpirationDate.Value < DateTime.UtcNow)
+                {
+                    return RedirectToAction("ChangeExpiredPassword", new { userId = user.Id });
+                } else if (await _userManager.HasPasswordAsync(user) &&
                     !await _userManager.GetLockoutEnabledAsync(user))
                 {
                     return RedirectToAction("ChangePassword", "Account");
@@ -114,6 +118,47 @@ namespace TrainingManagement.Controllers
 
             return View(model);
         }
+
+        [HttpPost]
+        public async Task<IActionResult> ChangeExpiredPassword(string userId, string newPassword)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            // Sprawdź czy nowe hasło nie było używane wcześniej
+            foreach (var oldPassword in user.PreviousPasswords)
+            {
+                if (_userManager.PasswordHasher.VerifyHashedPassword(user, oldPassword, newPassword)
+                    != PasswordVerificationResult.Failed)
+                {
+                    ModelState.AddModelError(string.Empty, "Nie można użyć poprzedniego hasła.");
+                    return View();
+                }
+            }
+
+            // Zmień hasło i zaktualizuj daty
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
+
+            if (result.Succeeded)
+            {
+                user.LastPasswordChangedDate = DateTime.UtcNow;
+                user.PasswordExpirationDate = DateTime.UtcNow.AddDays(90); // domyślnie 90 dni
+                user.PreviousPasswords.Add(_userManager.PasswordHasher.HashPassword(user, newPassword));
+                await _userManager.UpdateAsync(user);
+                return RedirectToAction("Login");
+            }
+
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+            return View();
+        }
+
 
 
         [HttpPost]
