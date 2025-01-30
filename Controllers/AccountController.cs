@@ -36,7 +36,8 @@ namespace TrainingManagement.Controllers
                 } else if (await _userManager.HasPasswordAsync(user) &&
                     !await _userManager.GetLockoutEnabledAsync(user))
                 {
-                    return RedirectToAction("ChangePassword", "Account");
+                    //TODO: dodać stronę z info o zablokowaniu konta
+                    return RedirectToAction("ChangePassword", "Account"); 
                 }
                 return RedirectToAction("Index", "Home");
             }
@@ -61,18 +62,34 @@ namespace TrainingManagement.Controllers
                     UserName = model.UserName,
                     Email = model.Email,
                     Name = model.Name,
-                    Lastname = model.Lastname
+                    Lastname = model.Lastname,
+                    PasswordExpirationDate = DateTime.UtcNow.AddDays(90)
                 };
+
+                var passwordValidator = new PasswordValidator<User>();
+                var passwordValidationresult = await passwordValidator.ValidateAsync(_userManager, null, model.Password);
+                if(!passwordValidationresult.Succeeded)
+                {
+                    foreach (var error in passwordValidationresult.Errors)
+                    {
+                        ModelState.AddModelError(string.Empty, error.Description);
+                    }
+                    return View(model);
+                }
+
                 var result = await _userManager.CreateAsync(user, model.Password);
-                if (result.Succeeded)
+                
+                if (!result.Succeeded)
                 {
-                    await _signInManager.SignInAsync(user, isPersistent: false);
-                    return RedirectToAction("Index", "Home");
+                    foreach (var error in result.Errors)
+                    {
+                        ModelState.AddModelError(string.Empty, error.Description);
+                    }
                 }
-                foreach (var error in result.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
+
+                await _signInManager.SignInAsync(user, isPersistent: false);
+                return RedirectToAction("Index", "Home");
+
             }
             return View(model);
         }
@@ -92,10 +109,40 @@ namespace TrainingManagement.Controllers
                 Email = user.Email,
                 Name = user.Name,
                 Lastname = user.Lastname
+                //TODO: dodać wyświetlanie daty wygaśnięcia hasła
             };
 
             ViewBag.IsAdmin = await _userManager.IsInRoleAsync(user, "Admin");
             return View(model);
+        }
+
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateUserProfile(ProfileViewModel model)
+        {
+            var user = await _userManager.FindByNameAsync(model.UserName);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            user.Name = model.Name;
+            user.Lastname = model.Lastname;
+
+            var result = await _userManager.UpdateAsync(user);
+            if (result.Succeeded)
+            {
+                TempData["StatusMessage"] = "Dane użytkownika zostały zaktualizowane.";
+                return RedirectToAction(nameof(Profile));
+            }
+
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+            return View("Profile", model);
         }
 
         [Authorize]
@@ -108,16 +155,61 @@ namespace TrainingManagement.Controllers
                 return NotFound();
             }
 
-            var model = new ProfileViewModel
+            var model = new PasswordChangeViewModel
             {
-                UserName = user.UserName,
-                Email = user.Email,
-                Name = user.Name,
-                Lastname = user.Lastname
+                CurrentPassword = string.Empty,
+                NewPassword = string.Empty,
+                ConfirmPassword = string.Empty
             };
 
             return View(model);
         }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(PasswordChangeViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View("Profile", model);
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var passwordValidator = new PasswordValidator<User>();
+            var result = await passwordValidator.ValidateAsync(_userManager, null, model.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+                return View(model);
+            }
+
+            var changePasswordResult = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+            if (!changePasswordResult.Succeeded)
+            {
+                foreach (var error in changePasswordResult.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+                return View("Profile", model);
+            }
+
+            await _signInManager.RefreshSignInAsync(user);
+            await _userManager.SetLockoutEnabledAsync(user, true);
+            TempData["StatusMessage"] = "Twoje hasło zostało zmienione.";
+
+            return RedirectToAction(nameof(Profile));
+        }
+
 
         [HttpPost]
         public async Task<IActionResult> ChangeExpiredPassword(string userId, string newPassword)
@@ -160,106 +252,10 @@ namespace TrainingManagement.Controllers
         }
 
 
-
-        [HttpPost]
-        [Authorize]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ChangePassword(ProfileViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View("Profile", model);
-            }
-
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            var passwordValidator = new PasswordValidator<User>();
-            var result = await passwordValidator.ValidateAsync(_userManager, null, model.NewPassword);
-
-            if (!result.Succeeded)
-            {
-                foreach (var error in result.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
-                return View(model);
-            }
-
-            var changePasswordResult = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
-            if (!changePasswordResult.Succeeded)
-            {
-                foreach (var error in changePasswordResult.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
-                return View("Profile", model);
-            }
-
-            await _signInManager.RefreshSignInAsync(user);
-            await _userManager.SetLockoutEnabledAsync(user, true);
-            TempData["StatusMessage"] = "Twoje hasło zostało zmienione.";
-
-            return RedirectToAction(nameof(Profile));
-        }
-
-        [HttpPost]
-        [Authorize(Roles = "Admin")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateUserProfile(ProfileViewModel model)
-        {
-            var user = await _userManager.FindByNameAsync(model.UserName);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            user.Name = model.Name;
-            user.Lastname = model.Lastname;
-
-            var result = await _userManager.UpdateAsync(user);
-            if (result.Succeeded)
-            {
-                TempData["StatusMessage"] = "Dane użytkownika zostały zaktualizowane.";
-
-                // Jeśli podano nowe hasło, zmień je również
-                if (!string.IsNullOrEmpty(model.NewPassword))
-                {
-                    var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
-                    var passwordResult = await _userManager.ResetPasswordAsync(user, resetToken, model.NewPassword);
-
-                    if (passwordResult.Succeeded)
-                    {
-                        TempData["StatusMessage"] = "Dane użytkownika i hasło zostały zaktualizowane.";
-                    }
-                    else
-                    {
-                        foreach (var error in passwordResult.Errors)
-                        {
-                            ModelState.AddModelError(string.Empty, error.Description);
-                        }
-                        return View("Profile", model);
-                    }
-                }
-
-                return RedirectToAction(nameof(Profile));
-            }
-
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
-            return View("Profile", model);
-        }
-
-
         public async Task<IActionResult> Logout()
         {
             await _signInManager.SignOutAsync();
             return RedirectToAction("Login");
-        }
+        }     
     }
 }

@@ -44,6 +44,7 @@
                                 @if (User.Identity.IsAuthenticated)
                                 {
                                     <li><a class="dropdown-item" asp-area="" asp-controller="Account" asp-action="Profile">Moje dane</a></li>
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Account" asp-action="ChangePassword">Ustawienia hasła</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" asp-area="" asp-controller="Account" asp-action="Logout">Wyloguj</a></li>
                                 }
