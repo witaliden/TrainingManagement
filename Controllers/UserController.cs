@@ -35,7 +35,14 @@ namespace TrainingManagement.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = new User { UserName = model.Email, Email = model.Email, Name = model.Name, Lastname = model.Lastname };
+                var user = new User
+                {
+                    UserName = model.Email,
+                    Email = model.Email,
+                    Name = model.Name,
+                    Lastname = model.Lastname,
+                    LastPasswordChangedDate = DateTime.UtcNow
+                };
                 var result = await _userManager.CreateAsync(user, model.Password);
                 result = await _userManager.SetLockoutEnabledAsync(user, false);
 
@@ -52,71 +59,8 @@ namespace TrainingManagement.Controllers
             return View(model);
         }
 
-        [HttpPost]
+        [HttpGet]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Details(EditUserViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                // Pobierz ponownie dane szkoleń, aby zachować je w widoku
-                var userTrainings = await _context.UserTrainings
-                    .Include(ut => ut.Training)
-                    .Where(ut => ut.UserId == model.Id)
-                    .OrderBy(ut => ut.IsCompleted)
-                    .ThenBy(ut => ut.Training.DueDate)
-                    .ToListAsync();
-
-                var viewModel = new UserDetailsViewModel
-                {
-                    User = await _userManager.FindByIdAsync(model.Id),
-                    UserTrainings = userTrainings
-                };
-                return View(viewModel);
-            }
-
-            var user = await _userManager.FindByIdAsync(model.Id);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            user.Email = model.Email;
-            user.UserName = model.Email;
-            user.Name = model.Name;
-            user.Lastname = model.Lastname;
-
-            var result = await _userManager.UpdateAsync(user);
-
-            if (!string.IsNullOrEmpty(model.NewPassword))
-            {
-                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-                var passwordResult = await _userManager.ResetPasswordAsync(user, token, model.NewPassword);
-
-                if (!passwordResult.Succeeded)
-                {
-                    foreach (var error in passwordResult.Errors)
-                    {
-                        ModelState.AddModelError(string.Empty, error.Description);
-                    }
-                }
-            }
-
-            if (result.Succeeded)
-            {
-                TempData["SuccessMessage"] = "Dane użytkownika zostały zaktualizowane.";
-            }
-            else
-            {
-                foreach (var error in result.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
-            }
-
-            return RedirectToAction(nameof(Details), new { id = model.Id });
-        }
-
-
         public async Task<IActionResult> Details(string id)
         {
             var user = await _userManager.FindByIdAsync(id);
@@ -132,14 +76,108 @@ namespace TrainingManagement.Controllers
                 .ThenBy(ut => ut.Training.DueDate)
                 .ToListAsync();
 
-            var viewModel = new UserDetailsViewModel
+            var viewModel = new UserConfigModel
             {
-                User = user,
-                UserTrainings = userTrainings
+                Id = id,
+                EditUserViewModel = new UserDetailsViewModel
+                {
+                    //Id = id,
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    Name = user.Name,
+                    Lastname = user.Lastname,
+                },
+                ChangeUserPasswordViewModel = new ChangeUserPasswordViewModel(),
+                UserSecutityViewModel = new UserSecutityViewModel
+                {
+                    IsLockedOut = await _userManager.IsLockedOutAsync(user),
+                    //PasswordExpirationDate = user.PasswordExpirationDate
+                },
+                UserTrainings = userTrainings,
             };
 
             return View(viewModel);
         }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Details(UserConfigModel model)
+        {
+            if (model.EditUserViewModel == null)
+            {
+                ModelState.AddModelError(string.Empty, "EditUserViewModel cannot be null.");
+                return View(model);
+            }
+
+            var userId = model.Id;
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                // Log the validation errors
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                foreach (var error in errors)
+                {
+                    // Display errors (you can also log them)
+                    Console.WriteLine("### " + error);
+                }
+
+                var userTrainings = await _context.UserTrainings
+                    .Include(ut => ut.Training)
+                    .Where(ut => ut.UserId == userId)
+                    .OrderBy(ut => ut.IsCompleted)
+                    .ThenBy(ut => ut.Training.DueDate)
+                    .ToListAsync();
+
+                var viewModel = new UserConfigModel
+                {
+                    Id = userId,
+                    EditUserViewModel = new UserDetailsViewModel
+                    {
+                        //Id = userId,
+                        UserName = model.EditUserViewModel.UserName,
+                        Email = model.EditUserViewModel.Email,
+                        Name = model.EditUserViewModel.Name,
+                        Lastname = model.EditUserViewModel.Lastname,
+                    },
+                    ChangeUserPasswordViewModel = new ChangeUserPasswordViewModel(),
+                    UserSecutityViewModel = new UserSecutityViewModel
+                    {
+                        IsLockedOut = await _userManager.IsLockedOutAsync(user),
+                        //PasswordExpirationDate = user.PasswordExpirationDate
+                    },
+                    UserTrainings = userTrainings
+                };
+                return View(viewModel);
+            }
+
+            user.Email = model.EditUserViewModel.Email;
+            user.UserName = model.EditUserViewModel.UserName;
+            user.Name = model.EditUserViewModel.Name;
+            user.Lastname = model.EditUserViewModel.Lastname;
+
+            var result = await _userManager.UpdateAsync(user);
+
+            if (result.Succeeded)
+            {
+                TempData["SuccessMessage"] = "Dane użytkownika zostały zaktualizowane.";
+                return RedirectToAction(nameof(Details), new { id = userId });
+            }
+            else
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+                return View(model);
+            }
+        }
+
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
@@ -151,7 +189,6 @@ namespace TrainingManagement.Controllers
                 return NotFound();
             }
 
-            // Nie pozwól administratorowi zablokować własnego konta
             if (user.UserName == User.Identity.Name)
             {
                 TempData["ErrorMessage"] = "Nie możesz zablokować własnego konta.";
@@ -160,13 +197,11 @@ namespace TrainingManagement.Controllers
 
             if (await _userManager.IsLockedOutAsync(user))
             {
-                // Odblokuj konto
                 await _userManager.SetLockoutEndDateAsync(user, null);
                 TempData["SuccessMessage"] = "Konto zostało odblokowane.";
             }
             else
             {
-                // Zablokuj konto
                 await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
                 TempData["SuccessMessage"] = "Konto zostało zablokowane.";
             }
@@ -201,10 +236,7 @@ namespace TrainingManagement.Controllers
                 return NotFound();
             }
 
-            // Generuj token resetowania hasła
             var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
-
-            // Resetuj hasło użytkownika
             var result = await _userManager.ResetPasswordAsync(user, resetToken, newPassword);
 
             if (result.Succeeded)
@@ -222,6 +254,7 @@ namespace TrainingManagement.Controllers
             return RedirectToAction(nameof(Details), new { id = userId });
         }
 
+
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteUser(string userId)
@@ -232,7 +265,6 @@ namespace TrainingManagement.Controllers
                 return NotFound();
             }
 
-            // Nie pozwól administratorowi usunąć własnego konta
             if (user.UserName == User.Identity.Name)
             {
                 TempData["ErrorMessage"] = "Nie możesz usunąć własnego konta.";

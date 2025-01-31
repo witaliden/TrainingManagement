@@ -63,6 +63,7 @@ namespace TrainingManagement.Controllers
                     Email = model.Email,
                     Name = model.Name,
                     Lastname = model.Lastname,
+                    LastPasswordChangedDate = DateTime.UtcNow,
                     PasswordExpirationDate = DateTime.UtcNow.AddDays(90)
                 };
 
@@ -203,6 +204,7 @@ namespace TrainingManagement.Controllers
                 return View("Profile", model);
             }
 
+            user.LastPasswordChangedDate = DateTime.UtcNow;
             await _signInManager.RefreshSignInAsync(user);
             await _userManager.SetLockoutEnabledAsync(user, true);
             TempData["StatusMessage"] = "Twoje hasło zostało zmienione.";

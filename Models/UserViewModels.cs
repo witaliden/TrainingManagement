@@ -9,6 +9,9 @@ namespace TrainingManagement.Models
         public required string Email { get; set; }
 
         [Required]
+        public required string UserName { get; set; }
+
+        [Required]
         public required string Name { get; set; }
 
         [Required]
@@ -23,9 +26,20 @@ namespace TrainingManagement.Models
         public required string ConfirmPassword { get; set; }
     }
 
-    public class EditUserViewModel
+    public class UserConfigModel
     {
         public required string Id { get; set; }
+        public UserDetailsViewModel? EditUserViewModel { get; set; }
+        public ChangeUserPasswordViewModel? ChangeUserPasswordViewModel { get; set; }
+        public UserSecutityViewModel? UserSecutityViewModel { get; set; }
+        public List<UserTraining>? UserTrainings { get; set; }
+    }
+
+    public class UserDetailsViewModel
+    {
+
+        [Required]
+        public required string UserName { get; set; }
 
         [Required(ErrorMessage = "Email jest wymagany")]
         [EmailAddress(ErrorMessage = "Nieprawidłowy format adresu email")]
@@ -37,7 +51,11 @@ namespace TrainingManagement.Models
         [Required(ErrorMessage = "Nazwisko jest wymagane")]
         public required string Lastname { get; set; }
 
-        // Opcjonalne pole na nowe hasło
+    }
+
+    public class ChangeUserPasswordViewModel
+    {
+        [Required]
         [DataType(DataType.Password)]
         public string? NewPassword { get; set; }
 
@@ -46,10 +64,8 @@ namespace TrainingManagement.Models
         public string? ConfirmPassword { get; set; }
     }
 
-    public class UserDetailsViewModel
+    public class UserSecutityViewModel
     {
-        public required User User { get; set; }
-        public List<UserTraining>? UserTrainings { get; set; }
         public bool IsLockedOut { get; set; }
     }
 
