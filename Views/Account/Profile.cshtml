@@ -14,8 +14,6 @@
         <h3>Dane użytkownika</h3>
         <form asp-action="UpdateUserProfile" method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            @* <input type="hidden" asp-for="UserName" /> *@
-            @* <input type="hidden" asp-for="Email" /> *@
             <div class="form-group mb-3">
                 <label>Email</label>
                 <input class="form-control" value="@Model.Email" disabled />
@@ -30,6 +28,14 @@
                 <label asp-for="Lastname">Nazwisko</label>
                 <input asp-for="Lastname" class="form-control" disabled="@(!User.IsInRole("Admin"))" />
                 <span asp-validation-for="Lastname" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                @if (Model.PasswordExpirationDate.HasValue)
+                {
+                <label asp-for="PasswordExpirationDate">Data wygaśnięcia konta:</label>
+                    <span>@Model.PasswordExpirationDate.Value.ToString("dd.MM.yyyy")</span>
+                }
             </div>
 
             <button type="submit" class="btn btn-primary" disabled="@(!User.IsInRole("Admin"))">Zapisz zmiany</button>

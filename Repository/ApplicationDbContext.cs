@@ -18,8 +18,16 @@ namespace TrainingManagement.Repository
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<User>(user => user.OwnsOne(
+                u => u.UserPasswordOptions)
+            );
+
             modelBuilder.Entity<UserTraining>()
-                .HasKey(ut => new { ut.UserId, ut.TrainingId });
+                .HasKey(ut => new
+                {
+                    ut.UserId,
+                    ut.TrainingId
+                });
 
             modelBuilder.Entity<UserTraining>()
                 .HasOne(ut => ut.User)

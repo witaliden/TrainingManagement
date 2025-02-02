@@ -64,7 +64,16 @@ namespace TrainingManagement.Controllers
                     Name = model.Name,
                     Lastname = model.Lastname,
                     LastPasswordChangedDate = DateTime.UtcNow,
-                    PasswordExpirationDate = DateTime.UtcNow.AddDays(90)
+                    PasswordExpirationDate = DateTime.UtcNow.AddDays(90),
+                    UserPasswordOptions = new UserPasswordOptions
+                    {
+                        RequiredPasswordLength = 8,
+                        RequireDigit = true,
+                        RequireLowercase = true,
+                        RequireUppercase = true,
+                        RequireNonAlphanumeric = true,
+                        RequiredUniqueChars = 1
+                    }
                 };
 
                 var passwordValidator = new PasswordValidator<User>();
@@ -109,8 +118,8 @@ namespace TrainingManagement.Controllers
                 UserName = user.UserName,
                 Email = user.Email,
                 Name = user.Name,
-                Lastname = user.Lastname
-                //TODO: dodać wyświetlanie daty wygaśnięcia hasła
+                Lastname = user.Lastname,
+                PasswordExpirationDate = user.PasswordExpirationDate
             };
 
             ViewBag.IsAdmin = await _userManager.IsInRoleAsync(user, "Admin");
@@ -131,6 +140,7 @@ namespace TrainingManagement.Controllers
 
             user.Name = model.Name;
             user.Lastname = model.Lastname;
+            user.PasswordExpirationDate = user.PasswordExpirationDate;
 
             var result = await _userManager.UpdateAsync(user);
             if (result.Succeeded)

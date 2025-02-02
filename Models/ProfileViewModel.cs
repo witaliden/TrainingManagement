@@ -14,6 +14,8 @@ namespace TrainingManagement.Models
         [Required(ErrorMessage = "Nazwisko jest wymagane")]
         [DataType(DataType.Text)]
         public string? Lastname { get; set; }
+
+        public DateTime? PasswordExpirationDate { get; set; }
     }
 
     public class PasswordChangeViewModel

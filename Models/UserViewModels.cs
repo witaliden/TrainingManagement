@@ -67,6 +67,8 @@ namespace TrainingManagement.Models
     public class UserSecutityViewModel
     {
         public bool IsLockedOut { get; set; }
+        public UserPasswordOptions? UserPasswordOptions { get; set; }
+        public DateTime? PasswordExpirationDate { get; set; }
     }
 
 }

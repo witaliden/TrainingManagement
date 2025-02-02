@@ -1,4 +1,7 @@
 ﻿@model UserConfigModel
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.Extensions.Options
+@inject IOptions<IdentityOptions> IdentityOptions
 
 <h2>Szczegóły konta pracownika</h2>
 
@@ -8,12 +11,13 @@
         @TempData["SuccessMessage"]
     </div>
 }
-else
+else if (TempData["ErrorMessage"] != null)
 {
-    <div class="alert alert-warning">
-        Zmiany nie zostały zapisane.
+    <div class="alert alert-danger">
+        @TempData["ErrorMessage"]
     </div>
 }
+
 
 <div class="row">
     <div class="col-md-6">
@@ -82,12 +86,22 @@ else
         </div>
     </div>
 
-    <div class="card mb-3">
+    @*     <div class="card mb-3">
         <div class="card-header">
             <h3>Ustawienia hasła</h3>
         </div>
         <div class="card-body">
-            <form asp-action="SetPasswordExpiration" method="post">
+            <p><strong>Wymagania hasła:</strong></p>
+            <ul class="list-unstyled">
+                <li>Minimum długość: @IdentityOptions.Value.Password.RequiredLength znaków</li>
+                <li>Wymagane cyfry: @(IdentityOptions.Value.Password.RequireDigit ? "Tak" : "Nie")</li>
+                <li>Wymagane małe litery: @(IdentityOptions.Value.Password.RequireLowercase ? "Tak" : "Nie")</li>
+                <li>Wymagane wielkie litery: @(IdentityOptions.Value.Password.RequireUppercase ? "Tak" : "Nie")</li>
+                <li>Wymagane znaki specjalne: @(IdentityOptions.Value.Password.RequireNonAlphanumeric ? "Tak" : "Nie")</li>
+                <li>Wymagane unikalne znaki: @IdentityOptions.Value.Password.RequiredUniqueChars</li>
+            </ul>
+
+            <form asp-action="SetPasswordExpiration" method="post" class="mt-3">
                 <input type="hidden" name="userId" value="@Model.Id" />
                 <div class="form-group">
                     <label>Liczba dni ważności hasła</label>
@@ -96,55 +110,116 @@ else
                 <button type="submit" class="btn btn-primary mt-3">Ustaw ważność hasła</button>
             </form>
         </div>
+    </div> *@
+
+    <div class="col-mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h3>Ustawienia hasła</h3>
+            </div>
+            <div class="card-body">
+                <form asp-action="SetPasswordOptions" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <input type="hidden" asp-for="Id" />
+
+                    <div class="row">
+                        <div class="form-group form-check col-md-6">
+                            <input asp-for="UserSecutityViewModel.UserPasswordOptions.RequireLowercase" class="form-check-input" />
+                            <label class="form-check-label">Wymaga małych liter</label>
+                        </div>
+                        <div class="form-group form-check col-md-6">
+                            <input asp-for="UserSecutityViewModel.UserPasswordOptions.RequireDigit" class="form-check-input" />
+                            <label class="form-check-label">Wymaga cyfry</label>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group form-check col-md-6">
+                            <input asp-for="UserSecutityViewModel.UserPasswordOptions.RequireUppercase" class="form-check-input" />
+                            <label class="form-check-label">Wymaga wielkich liter</label>
+                        </div>
+                        <div class="form-group form-check col-md-6">
+                            <input asp-for="UserSecutityViewModel.UserPasswordOptions.RequireNonAlphanumeric" class="form-check-input" />
+                            <label class="form-check-label">Wymaga znaków specjalnych</label>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="row">
+                        <div class="form-group col-md-4">
+                            <label>Ile unikalnych znaków</label>
+                            <input asp-for="UserSecutityViewModel.UserPasswordOptions.RequiredUniqueChars" class="form-control" min="1" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Min. długość hasła</label>
+                            <input asp-for="UserSecutityViewModel.UserPasswordOptions.RequiredPasswordLength" class="form-control" min="1" />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Ile dni ważne hasło</label>
+                            @{
+                                var daysLeft = Model.UserSecutityViewModel.PasswordExpirationDate.HasValue
+                                ? (Model.UserSecutityViewModel.PasswordExpirationDate.Value - DateTime.UtcNow).Days
+                                : 0;
+                            }
+                            <input type="number" name="daysValid" class="form-control" value="@daysLeft" min="1" required />
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" disabled="@(!User.IsInRole("Admin"))">Zmień ustawienia hasłą</button>
+                </form>
+            </div>
+        </div>
     </div>
-</div>
 
-<div class="card mb-3">
-    <div class="card-header">
-        <h3>Zarządzanie kontem</h3>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <h3>Zarządzanie kontem</h3>
+        </div>
+        <div class="card-body">
+            <form asp-action="ToggleUserLock" method="post" style="display: inline;">
+                <input type="hidden" name="userId" value="@Model.Id" />
+                <button type="submit" class="btn @(Model.UserSecutityViewModel.IsLockedOut ? "btn-success" : "btn-warning")"
+                @(Model.EditUserViewModel.UserName == User.Identity.Name ? "disabled" : "")>
+                    @(Model.UserSecutityViewModel.IsLockedOut ? "Odblokuj konto" : "Zablokuj konto")
+                </button>
+            </form>
+
+            <form asp-action="DeleteUser" method="post" style="display: inline;"
+                  onsubmit="return confirm('Czy na pewno chcesz usunąć tego użytkownika?');">
+                <input type="hidden" name="userId" value="@Model.Id" />
+                <button type="submit" class="btn btn-danger"
+                @(Model.EditUserViewModel.UserName == User.Identity.Name ? "disabled" : "")>
+                    Usuń konto
+                </button>
+            </form>
+        </div>
     </div>
-    <div class="card-body">
-        <form asp-action="ToggleUserLock" method="post" style="display: inline;">
-            <input type="hidden" name="userId" value="@Model.Id" />
-            <button type="submit" class="btn @(Model.UserSecutityViewModel.IsLockedOut ? "btn-success" : "btn-warning")"
-            @(Model.EditUserViewModel.UserName == User.Identity.Name ? "disabled" : "")>
-                @(Model.UserSecutityViewModel.IsLockedOut ? "Odblokuj konto" : "Zablokuj konto")
-            </button>
-        </form>
-
-        <form asp-action="DeleteUser" method="post" style="display: inline;"
-              onsubmit="return confirm('Czy na pewno chcesz usunąć tego użytkownika?');">
-            <input type="hidden" name="userId" value="@Model.Id" />
-            <button type="submit" class="btn btn-danger"
-            @(Model.EditUserViewModel.UserName == User.Identity.Name ? "disabled" : "")>
-                Usuń konto
-            </button>
-        </form>
-    </div>
-</div>
 
 
-<h3>Szkolenia</h3>
+    <h3>Szkolenia</h3>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Tytuł</th>
-            <th>Status</th>
-            <th>Data ukończenia</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var ut in Model.UserTrainings)
-        {
+    <table class="table">
+        <thead>
             <tr>
-                <td>@ut.Training.Title</td>
-                <td>@(ut.IsCompleted ? "Ukończone" : "W trakcie")</td>
-                <td>@(ut.CompletionDateTime?.ToShortDateString() ?? "-")</td>
+                <th>Tytuł</th>
+                <th>Status</th>
+                <th>Data ukończenia</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var ut in Model.UserTrainings)
+            {
+                <tr>
+                    <td>@ut.Training.Title</td>
+                    <td>@(ut.IsCompleted ? "Ukończone" : "W trakcie")</td>
+                    <td>@(ut.CompletionDateTime?.ToShortDateString() ?? "-")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
 
-<a asp-action="AssignTrainings" asp-route-id="@Model.Id" class="btn btn-primary">Przypisz szkolenia</a>
-<a asp-action="Index" class="btn btn-secondary">Powrót do listy</a>
+    <a asp-action="AssignTrainings" asp-route-id="@Model.Id" class="btn btn-primary">Przypisz szkolenia</a>
+    <a asp-action="Index" class="btn btn-secondary">Powrót do listy</a>
+</div>

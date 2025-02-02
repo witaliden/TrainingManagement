@@ -10,22 +10,21 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")).EnableSensitiveDataLogging()
     .EnableDetailedErrors());
 
-builder.Services.AddIdentity<User, IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddDefaultTokenProviders();
-
-builder.Services.Configure<IdentityOptions>(options =>
+builder.Services.AddIdentity<User, IdentityRole>(options =>
 {
     options.Password = new PasswordOptions
     {
-        RequiredLength = 14,
-        RequireDigit = true,
-        RequireLowercase = true,
-        RequireUppercase = true,
-        RequireNonAlphanumeric = true,
+        RequiredLength = 1,
+        RequireDigit = false,
+        RequireLowercase = false,
+        RequireUppercase = false,
+        RequireNonAlphanumeric = false,
         RequiredUniqueChars = 1
     };
-});
+})
+.AddPasswordValidator<CustomPasswordValidator<User>>()
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddDefaultTokenProviders();
 
 builder.Services.AddControllersWithViews();
 

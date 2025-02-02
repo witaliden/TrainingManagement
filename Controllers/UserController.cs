@@ -43,7 +43,16 @@ namespace TrainingManagement.Controllers
                     Email = model.Email,
                     Name = model.Name,
                     Lastname = model.Lastname,
-                    LastPasswordChangedDate = DateTime.UtcNow
+                    LastPasswordChangedDate = DateTime.UtcNow,
+                    UserPasswordOptions = new UserPasswordOptions
+                    {
+                        RequiredPasswordLength = 8,
+                        RequireDigit = true,
+                        RequireLowercase = true,
+                        RequireUppercase = true,
+                        RequireNonAlphanumeric = true,
+                        RequiredUniqueChars = 1
+                    }
                 };
                 var result = await _userManager.CreateAsync(user, model.Password);
                 result = await _userManager.SetLockoutEnabledAsync(user, false);
@@ -92,7 +101,16 @@ namespace TrainingManagement.Controllers
                 UserSecutityViewModel = new UserSecutityViewModel
                 {
                     IsLockedOut = await _userManager.IsLockedOutAsync(user),
-                    //PasswordExpirationDate = user.PasswordExpirationDate
+                    UserPasswordOptions = new UserPasswordOptions
+                    {
+                        RequiredPasswordLength = user.UserPasswordOptions.RequiredPasswordLength,
+                        RequireDigit = user.UserPasswordOptions.RequireDigit,
+                        RequireLowercase = user.UserPasswordOptions.RequireLowercase,
+                        RequireUppercase = user.UserPasswordOptions.RequireUppercase,
+                        RequireNonAlphanumeric = user.UserPasswordOptions.RequireNonAlphanumeric,
+                        RequiredUniqueChars = user.UserPasswordOptions.RequiredUniqueChars
+                    },
+                    PasswordExpirationDate = user.PasswordExpirationDate
                 },
                 UserTrainings = userTrainings,
             };
@@ -141,7 +159,6 @@ namespace TrainingManagement.Controllers
                     UserSecutityViewModel = new UserSecutityViewModel
                     {
                         IsLockedOut = await _userManager.IsLockedOutAsync(user),
-                        //PasswordExpirationDate = user.PasswordExpirationDate
                     },
                     UserTrainings = userTrainings
                 };
@@ -166,6 +183,7 @@ namespace TrainingManagement.Controllers
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
                 }
+                TempData[ErrorMessageKey] = "Wystąpił błąd podczas aktualizacji danych użytkownika.";
                 return View(model);
             }
         }
@@ -201,22 +219,52 @@ namespace TrainingManagement.Controllers
             return RedirectToAction(nameof(Details), new { id = userId });
         }
 
+
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> SetPasswordExpiration(string userId, int daysValid)
+        public async Task<IActionResult> SetPasswordOptions(UserConfigModel model, int daysValid)
         {
-            var user = await _userManager.FindByIdAsync(userId);
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var user = await _userManager.FindByIdAsync(model.Id);
             if (user == null)
             {
                 return NotFound();
             }
 
-            user.PasswordExpirationDate = DateTime.UtcNow.AddDays(daysValid);
-            await _userManager.UpdateAsync(user);
+            var passwordOptions = model.UserSecutityViewModel.UserPasswordOptions;
 
-            TempData["SuccessMessage"] = $"Hasło będzie ważne przez {daysValid} dni.";
-            return RedirectToAction(nameof(Details), new { id = userId });
+            // Aktualizacja wymagań hasła
+            user.UserPasswordOptions.RequiredPasswordLength = passwordOptions.RequiredPasswordLength;
+            user.UserPasswordOptions.RequireDigit = passwordOptions.RequireDigit;
+            user.UserPasswordOptions.RequireLowercase = passwordOptions.RequireLowercase;
+            user.UserPasswordOptions.RequireUppercase = passwordOptions.RequireUppercase;
+            user.UserPasswordOptions.RequireNonAlphanumeric = passwordOptions.RequireNonAlphanumeric;
+            user.UserPasswordOptions.RequiredUniqueChars = passwordOptions.RequiredUniqueChars;
+
+            user.PasswordExpirationDate = DateTime.UtcNow.AddDays(daysValid);
+
+            var result = await _userManager.UpdateAsync(user);
+
+            if (result.Succeeded)
+            {
+                TempData["SuccessMessage"] = "Konfiguracja hasła użytkownika została zaktualizowana. " +
+                    $"Hasło będzie ważne przez {daysValid} dni.";
+                return RedirectToAction("Index");
+            }
+            else
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError("", error.Description);
+                }
+                return View(model);
+            }
         }
+
 
 
         [HttpPost]
@@ -235,7 +283,6 @@ namespace TrainingManagement.Controllers
             if (result.Succeeded)
             {
                 TempData[SuccessMessageKey] = "Hasło zostało zmienione pomyślnie.";
-                return RedirectToAction(nameof(Details), new { id = userId });
             }
             else
             {
@@ -269,19 +316,21 @@ namespace TrainingManagement.Controllers
             if (result.Succeeded)
             {
                 TempData[SuccessMessageKey] = "Użytkownik został usunięty.";
-                return RedirectToAction(nameof(Index));
             }
-
-            foreach (var error in result.Errors)
+            else
             {
-                ModelState.AddModelError("", error.Description);
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError("", error.Description);
+                }
+                TempData[ErrorMessageKey] = "Wystąpił błąd podczas usuwania użytkownika.";
             }
 
-            TempData[ErrorMessageKey] = "Wystąpił błąd podczas usuwania użytkownika.";
             return RedirectToAction(nameof(Index));
         }
 
-
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AssignTrainings(string id)
         {
             var user = await _userManager.FindByIdAsync(id);
@@ -312,6 +361,7 @@ namespace TrainingManagement.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AssignTrainings(AssignTrainingsViewModel model)
         {
             var user = await _userManager.FindByIdAsync(model.UserId);
