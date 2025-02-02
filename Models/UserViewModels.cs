@@ -39,17 +39,17 @@ namespace TrainingManagement.Models
     {
 
         [Required]
-        public required string UserName { get; set; }
+        public string? UserName { get; set; }
 
         [Required(ErrorMessage = "Email jest wymagany")]
         [EmailAddress(ErrorMessage = "Nieprawidłowy format adresu email")]
-        public required string Email { get; set; }
+        public string? Email { get; set; }
 
         [Required(ErrorMessage = "Imię jest wymagane")]
-        public required string Name { get; set; }
+        public string? Name { get; set; }
 
         [Required(ErrorMessage = "Nazwisko jest wymagane")]
-        public required string Lastname { get; set; }
+        public string? Lastname { get; set; }
 
     }
 

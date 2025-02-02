@@ -10,6 +10,8 @@ namespace TrainingManagement.Controllers
     [Authorize(Roles = "Admin")]
     public class UserController : Controller
     {
+        public static readonly string ErrorMessageKey = "ErrorMessage";
+        public static readonly string SuccessMessageKey = "SuccessMessage";
         private readonly UserManager<User> _userManager;
         private readonly ApplicationDbContext _context;
 
@@ -81,7 +83,6 @@ namespace TrainingManagement.Controllers
                 Id = id,
                 EditUserViewModel = new UserDetailsViewModel
                 {
-                    //Id = id,
                     UserName = user.UserName,
                     Email = user.Email,
                     Name = user.Name,
@@ -119,14 +120,6 @@ namespace TrainingManagement.Controllers
 
             if (!ModelState.IsValid)
             {
-                // Log the validation errors
-                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                foreach (var error in errors)
-                {
-                    // Display errors (you can also log them)
-                    Console.WriteLine("### " + error);
-                }
-
                 var userTrainings = await _context.UserTrainings
                     .Include(ut => ut.Training)
                     .Where(ut => ut.UserId == userId)
@@ -139,7 +132,6 @@ namespace TrainingManagement.Controllers
                     Id = userId,
                     EditUserViewModel = new UserDetailsViewModel
                     {
-                        //Id = userId,
                         UserName = model.EditUserViewModel.UserName,
                         Email = model.EditUserViewModel.Email,
                         Name = model.EditUserViewModel.Name,
@@ -165,7 +157,7 @@ namespace TrainingManagement.Controllers
 
             if (result.Succeeded)
             {
-                TempData["SuccessMessage"] = "Dane użytkownika zostały zaktualizowane.";
+                TempData[SuccessMessageKey] = "Dane użytkownika zostały zaktualizowane.";
                 return RedirectToAction(nameof(Details), new { id = userId });
             }
             else
@@ -191,19 +183,19 @@ namespace TrainingManagement.Controllers
 
             if (user.UserName == User.Identity.Name)
             {
-                TempData["ErrorMessage"] = "Nie możesz zablokować własnego konta.";
+                TempData[ErrorMessageKey] = "Nie możesz zablokować własnego konta.";
                 return RedirectToAction(nameof(Details), new { id = userId });
             }
 
             if (await _userManager.IsLockedOutAsync(user))
             {
                 await _userManager.SetLockoutEndDateAsync(user, null);
-                TempData["SuccessMessage"] = "Konto zostało odblokowane.";
+                TempData[SuccessMessageKey] = "Konto zostało odblokowane.";
             }
             else
             {
                 await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
-                TempData["SuccessMessage"] = "Konto zostało zablokowane.";
+                TempData[SuccessMessageKey] = "Konto zostało zablokowane.";
             }
 
             return RedirectToAction(nameof(Details), new { id = userId });
@@ -227,6 +219,7 @@ namespace TrainingManagement.Controllers
         }
 
 
+        [HttpPost]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ChangeUserPassword(string userId, string newPassword)
         {
@@ -241,7 +234,8 @@ namespace TrainingManagement.Controllers
 
             if (result.Succeeded)
             {
-                TempData["StatusMessage"] = "Hasło zostało zmienione pomyślnie.";
+                TempData[SuccessMessageKey] = "Hasło zostało zmienione pomyślnie.";
+                return RedirectToAction(nameof(Details), new { id = userId });
             }
             else
             {
@@ -267,14 +261,14 @@ namespace TrainingManagement.Controllers
 
             if (user.UserName == User.Identity.Name)
             {
-                TempData["ErrorMessage"] = "Nie możesz usunąć własnego konta.";
+                TempData[ErrorMessageKey] = "Nie możesz usunąć własnego konta.";
                 return RedirectToAction(nameof(Index));
             }
 
             var result = await _userManager.DeleteAsync(user);
             if (result.Succeeded)
             {
-                TempData["SuccessMessage"] = "Użytkownik został usunięty.";
+                TempData[SuccessMessageKey] = "Użytkownik został usunięty.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -283,7 +277,7 @@ namespace TrainingManagement.Controllers
                 ModelState.AddModelError("", error.Description);
             }
 
-            TempData["ErrorMessage"] = "Wystąpił błąd podczas usuwania użytkownika.";
+            TempData[ErrorMessageKey] = "Wystąpił błąd podczas usuwania użytkownika.";
             return RedirectToAction(nameof(Index));
         }
 
