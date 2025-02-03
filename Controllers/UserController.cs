@@ -42,6 +42,11 @@ namespace TrainingManagement.Controllers
         {
             if (ModelState.IsValid)
             {
+                var random = new Random();
+                double x = random.Next(1, 100);
+                double a = model.UserName.Length;
+                double y = a * Math.Log(x);
+
                 var user = new User
                 {
                     UserName = model.UserName,
@@ -57,13 +62,16 @@ namespace TrainingManagement.Controllers
                         RequireUppercase = true,
                         RequireNonAlphanumeric = true,
                         RequiredUniqueChars = 1
-                    }
+                    },
+                    LastGeneratedX = x,
+                    LastGeneratedY = y
                 };
                 var result = await _userManager.CreateAsync(user, model.Password);
                 result = await _userManager.SetLockoutEnabledAsync(user, false);
 
                 if (result.Succeeded)
                 {
+                    TempData[SuccessMessageKey] = $"Utworzono użytkownika. Wartość x dla pierwszego logowania: {x}";
                     await _activityLogger.LogActivityAsync(user.UserName, UserActionType.CreateUser, true, $"Utworzono nowego użytkownika");
                     return RedirectToAction(nameof(Index));
                 }

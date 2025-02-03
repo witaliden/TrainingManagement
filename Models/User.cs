@@ -13,5 +13,7 @@ namespace TrainingManagement.Models
         public DateTime? PasswordExpirationDate { get; set; }
         public DateTime? LockoutEndDateUtc { get; set; }
         public List<string> PreviousPasswords { get; set; } = [];
+        public double LastGeneratedX { get; set; }
+        public double LastGeneratedY { get; set; }
     }
 }

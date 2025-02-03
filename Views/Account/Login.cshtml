@@ -1,17 +1,52 @@
 ﻿@model LoginViewModel
-<h2>Login</h2>
 
-<form asp-action="Login" method="post">
-    <div asp-validation-summary="All" class="text-danger"></div>
-    <div class="form-group">
-        <label asp-for="Username">Nazwa użytkownika</label>
-        <input asp-for="Username" class="form-control" />
-        <span asp-validation-for="Username" class="text-danger"></span>
+<h2>Logowanie do aplikacji</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <form id="loginForm" asp-action="Login" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="form-group mb-3">
+                <label>Login</label>
+                <input type="text" id="username" name="username" class="form-control" required />
+            </div>
+
+            <div id="otpSection" style="display: none;">
+                <div class="alert alert-info">
+                    Wartość x: <span id="xValue"></span>
+                    <br />
+                    Oblicz: y = a*ln(x), gdzie a jest długością twojego loginu
+                </div>
+
+                <div class="form-group mb-3">
+                    <label>Obliczona wartość y</label>
+                    <input type="text" id="calculatedY" name="calculatedY" class="form-control" required />
+                </div>
+            </div>
+
+            <button type="button" id="validateUsername" class="btn btn-primary">Dalej</button>
+            <button type="submit" id="submitLogin" class="btn btn-success" style="display: none;">Zaloguj</button>
+        </form>
     </div>
-    <div class="form-group">
-        <label asp-for="Password">Hasło</label>
-        <input asp-for="Password" class="form-control" type="password" />
-        <span asp-validation-for="Password" class="text-danger"></span>
-    </div>
-    <button type="submit" class="btn btn-primary">Zaloguj</button>
-</form>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $("#validateUsername").click(function() {
+                var username = $("#username").val();
+                $.post("/Account/ValidateUsername", { username: username }, function(response) {
+                    if (response.success) {
+                        $("#otpSection").show();
+                        $("#xValue").text(response.x);
+                        $("#validateUsername").hide();
+                        $("#submitLogin").show();
+                    } else {
+                        alert(response.message);
+                    }
+                });
+            });
+        });
+    </script>
+}
