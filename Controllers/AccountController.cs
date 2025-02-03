@@ -29,26 +29,53 @@ namespace TrainingManagement.Controllers
         [HttpPost]
         public async Task<IActionResult> Login(string username, string password)
         {
-            var result = await _signInManager.PasswordSignInAsync(username, password, isPersistent: false, lockoutOnFailure: false);
-            if (result.Succeeded)
+            var user = await _userManager.FindByNameAsync(username);
+            if (user != null)
             {
-                await _activityLogger.LogActivityAsync(User.Identity.Name, UserActionType.Login, true, "Pomyślne logowanie");
-                var user = await _userManager.FindByNameAsync(username);
-                if (user.PasswordExpirationDate.HasValue
-                    && user.PasswordExpirationDate.Value < DateTime.UtcNow)
+                if (await _userManager.IsLockedOutAsync(user))
                 {
-                    return RedirectToAction("ChangeExpiredPassword", new { userId = user.Id });
+                    await _activityLogger.LogActivityAsync(username, UserActionType.Login, false, "Próba logowania na zablokowane konto");
+                    ModelState.AddModelError(string.Empty, "Konto zostało zablokowane. Spróbuj ponownie za 15 minut.");
+                    return View();
                 }
-                else if (await _userManager.HasPasswordAsync(user) &&
-                    !await _userManager.GetLockoutEnabledAsync(user))
+
+                var result = await _signInManager.PasswordSignInAsync(username, password, isPersistent: false, lockoutOnFailure: true);
+
+                if (result.Succeeded)
                 {
-                    //TODO: dodać stronę z info o zablokowaniu konta
-                    return RedirectToAction("ChangePassword", "Account");
+                    await _activityLogger.LogActivityAsync(username, UserActionType.Login, true, "Pomyślne logowanie");
+                    await _userManager.ResetAccessFailedCountAsync(user);
+
+                    if (user.PasswordExpirationDate.HasValue &&
+                        user.PasswordExpirationDate.Value < DateTime.UtcNow)
+                    {
+                        return RedirectToAction("ChangeExpiredPassword", new { userId = user.Id });
+                    }
+                    else if (await _userManager.HasPasswordAsync(user) && !await _userManager.GetLockoutEnabledAsync(user))
+                    {
+                        return RedirectToAction("ChangePassword", "Account");
+                    }
+                    return RedirectToAction("Index", "Home");
+                } else {
+                    await _userManager.AccessFailedAsync(user);
+
+                    if (await _userManager.GetAccessFailedCountAsync(user) >=
+                        _userManager.Options.Lockout.MaxFailedAccessAttempts) {
+                        await _activityLogger.LogActivityAsync(username, UserActionType.Login, false, "Konto zostało zablokowane po przekroczeniu limitu prób logowania");
+                        ModelState.AddModelError(string.Empty, "Przekroczono limit prób logowania. Konto zostało zablokowane na 15 minut.");
+                    }
+                    else
+                    {
+                        await _activityLogger.LogActivityAsync(username, UserActionType.Login, false, "Nieudana próba logowania");
+                        ModelState.AddModelError(string.Empty, "Login lub hasło niepoprawne");
+                    }
                 }
-                return RedirectToAction("Index", "Home");
             }
-            await _activityLogger.LogActivityAsync(username, UserActionType.Login, false, "Nieudana próba logowania");
-            ModelState.AddModelError(string.Empty, "Login lub hasło niepoprawne");
+            else
+            {
+                await _activityLogger.LogActivityAsync(username, UserActionType.Login, false, "Próba logowania na nieistniejące konto");
+                ModelState.AddModelError(string.Empty, "Login lub hasło niepoprawne");
+            }
             return View();
         }
 

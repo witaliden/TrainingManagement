@@ -33,6 +33,13 @@ builder.Services.AddScoped<DataInitializerService>();
 
 builder.Services.AddScoped<IUserActivityLogger, UserActivityLogger>();
 
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+    options.Lockout.MaxFailedAccessAttempts = 3;
+    options.Lockout.AllowedForNewUsers = true;
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

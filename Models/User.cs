@@ -11,6 +11,7 @@ namespace TrainingManagement.Models
         public required UserPasswordOptions UserPasswordOptions { get; set; } = new UserPasswordOptions();
         public DateTime? LastPasswordChangedDate { get; set; }
         public DateTime? PasswordExpirationDate { get; set; }
+        public DateTime? LockoutEndDateUtc { get; set; }
         public List<string> PreviousPasswords { get; set; } = [];
     }
 }
