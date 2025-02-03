@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using TrainingManagement.ActivityLogging;
 using TrainingManagement.Configuration;
 using TrainingManagement.Models;
 using TrainingManagement.Repository;
@@ -29,6 +30,8 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddScoped<DataInitializerService>();
+
+builder.Services.AddScoped<IUserActivityLogger, UserActivityLogger>();
 
 var app = builder.Build();
 

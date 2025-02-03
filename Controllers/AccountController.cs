@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using TrainingManagement.ActivityLogging;
 using TrainingManagement.Models;
+using TrainingManagement.Models.enums;
 using TrainingManagement.Repository;
 
 namespace TrainingManagement.Controllers
@@ -10,11 +12,13 @@ namespace TrainingManagement.Controllers
     {
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
+        private readonly IUserActivityLogger _activityLogger;
 
-        public AccountController(UserManager<User> userManager, SignInManager<User> signInManager)
+        public AccountController(UserManager<User> userManager, SignInManager<User> signInManager, IUserActivityLogger activityLogger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
+            _activityLogger = activityLogger;
         }
 
         public IActionResult Login()
@@ -28,19 +32,22 @@ namespace TrainingManagement.Controllers
             var result = await _signInManager.PasswordSignInAsync(username, password, isPersistent: false, lockoutOnFailure: false);
             if (result.Succeeded)
             {
+                await _activityLogger.LogActivityAsync(User.Identity.Name, UserActionType.Login, true, "Pomyślne logowanie");
                 var user = await _userManager.FindByNameAsync(username);
                 if (user.PasswordExpirationDate.HasValue
                     && user.PasswordExpirationDate.Value < DateTime.UtcNow)
                 {
                     return RedirectToAction("ChangeExpiredPassword", new { userId = user.Id });
-                } else if (await _userManager.HasPasswordAsync(user) &&
+                }
+                else if (await _userManager.HasPasswordAsync(user) &&
                     !await _userManager.GetLockoutEnabledAsync(user))
                 {
                     //TODO: dodać stronę z info o zablokowaniu konta
-                    return RedirectToAction("ChangePassword", "Account"); 
+                    return RedirectToAction("ChangePassword", "Account");
                 }
                 return RedirectToAction("Index", "Home");
             }
+            await _activityLogger.LogActivityAsync(username, UserActionType.Login, false, "Nieudana próba logowania");
             ModelState.AddModelError(string.Empty, "Login lub hasło niepoprawne");
             return View();
         }
@@ -78,7 +85,7 @@ namespace TrainingManagement.Controllers
 
                 var passwordValidator = new PasswordValidator<User>();
                 var passwordValidationresult = await passwordValidator.ValidateAsync(_userManager, null, model.Password);
-                if(!passwordValidationresult.Succeeded)
+                if (!passwordValidationresult.Succeeded)
                 {
                     foreach (var error in passwordValidationresult.Errors)
                     {
@@ -88,7 +95,7 @@ namespace TrainingManagement.Controllers
                 }
 
                 var result = await _userManager.CreateAsync(user, model.Password);
-                
+
                 if (!result.Succeeded)
                 {
                     foreach (var error in result.Errors)
@@ -98,6 +105,7 @@ namespace TrainingManagement.Controllers
                 }
 
                 await _signInManager.SignInAsync(user, isPersistent: false);
+                await _activityLogger.LogActivityAsync(user.UserName, UserActionType.RegisterUser, true, "Rejestracja nowego użytkownika");
                 return RedirectToAction("Index", "Home");
 
             }
@@ -217,6 +225,7 @@ namespace TrainingManagement.Controllers
             user.LastPasswordChangedDate = DateTime.UtcNow;
             await _signInManager.RefreshSignInAsync(user);
             await _userManager.SetLockoutEnabledAsync(user, true);
+            await _activityLogger.LogActivityAsync(user.UserName, UserActionType.ChangePassword, true, "Zmiana hasła");
             TempData["StatusMessage"] = "Twoje hasło zostało zmienione.";
 
             return RedirectToAction(nameof(Profile));
@@ -266,8 +275,10 @@ namespace TrainingManagement.Controllers
 
         public async Task<IActionResult> Logout()
         {
+            var userName = User.Identity.Name;
             await _signInManager.SignOutAsync();
+            await _activityLogger.LogActivityAsync(userName, UserActionType.Logout, true, "Wylogowanie z systemu");
             return RedirectToAction("Login");
-        }     
+        }
     }
 }

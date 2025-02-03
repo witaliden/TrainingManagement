@@ -2,11 +2,11 @@
 {
     public class UserPasswordOptions
     {
-        public int RequiredPasswordLength { get; set; } = 6;
-        public bool RequireDigit { get; set; } = false;
-        public bool RequireLowercase { get; set; } = false;
-        public bool RequireUppercase { get; set; } = false;
-        public bool RequireNonAlphanumeric { get; set; } = false;
+        public int RequiredPasswordLength { get; set; } = 8;
+        public bool RequireDigit { get; set; } = true;
+        public bool RequireLowercase { get; set; } = true;
+        public bool RequireUppercase { get; set; } = true;
+        public bool RequireNonAlphanumeric { get; set; } = true;
         public int RequiredUniqueChars { get; set; } = 1;
     }
 }

@@ -13,6 +13,7 @@ namespace TrainingManagement.Repository
 
         public DbSet<Training> Trainings { get; set; }
         public DbSet<UserTraining> UserTrainings { get; set; }
+        public DbSet<UserActivityLog> UserActivityLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -38,6 +39,16 @@ namespace TrainingManagement.Repository
                 .HasOne(ut => ut.Training)
                 .WithMany(t => t.UserTrainings)
                 .HasForeignKey(ut => ut.TrainingId);
+
+            modelBuilder.Entity<UserActivityLog>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.UserName).IsRequired();
+                entity.Property(e => e.Timestamp).IsRequired();
+                entity.Property(e => e.ActionType).IsRequired();
+                entity.Property(e => e.Description).IsRequired();
+            });
+
         }
     }
 

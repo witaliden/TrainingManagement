@@ -86,32 +86,6 @@ else if (TempData["ErrorMessage"] != null)
         </div>
     </div>
 
-    @*     <div class="card mb-3">
-        <div class="card-header">
-            <h3>Ustawienia hasła</h3>
-        </div>
-        <div class="card-body">
-            <p><strong>Wymagania hasła:</strong></p>
-            <ul class="list-unstyled">
-                <li>Minimum długość: @IdentityOptions.Value.Password.RequiredLength znaków</li>
-                <li>Wymagane cyfry: @(IdentityOptions.Value.Password.RequireDigit ? "Tak" : "Nie")</li>
-                <li>Wymagane małe litery: @(IdentityOptions.Value.Password.RequireLowercase ? "Tak" : "Nie")</li>
-                <li>Wymagane wielkie litery: @(IdentityOptions.Value.Password.RequireUppercase ? "Tak" : "Nie")</li>
-                <li>Wymagane znaki specjalne: @(IdentityOptions.Value.Password.RequireNonAlphanumeric ? "Tak" : "Nie")</li>
-                <li>Wymagane unikalne znaki: @IdentityOptions.Value.Password.RequiredUniqueChars</li>
-            </ul>
-
-            <form asp-action="SetPasswordExpiration" method="post" class="mt-3">
-                <input type="hidden" name="userId" value="@Model.Id" />
-                <div class="form-group">
-                    <label>Liczba dni ważności hasła</label>
-                    <input type="number" name="daysValid" class="form-control" min="1" required />
-                </div>
-                <button type="submit" class="btn btn-primary mt-3">Ustaw ważność hasła</button>
-            </form>
-        </div>
-    </div> *@
-
     <div class="col-mb-3">
         <div class="card">
             <div class="card-header">
@@ -173,7 +147,7 @@ else if (TempData["ErrorMessage"] != null)
     </div>
 
 
-    <div class="card mb-3">
+    <div class="col mb-3">
         <div class="card-header">
             <h3>Zarządzanie kontem</h3>
         </div>
@@ -186,6 +160,8 @@ else if (TempData["ErrorMessage"] != null)
                 </button>
             </form>
 
+            <a asp-action="ActivityLogs" asp-route-userId="@Model.Id" class="btn btn-info">Historia aktywności</a>
+
             <form asp-action="DeleteUser" method="post" style="display: inline;"
                   onsubmit="return confirm('Czy na pewno chcesz usunąć tego użytkownika?');">
                 <input type="hidden" name="userId" value="@Model.Id" />
@@ -193,33 +169,38 @@ else if (TempData["ErrorMessage"] != null)
                 @(Model.EditUserViewModel.UserName == User.Identity.Name ? "disabled" : "")>
                     Usuń konto
                 </button>
+
             </form>
         </div>
     </div>
 
+    <div class="col-12 mb-3">
+        <div class="card-header">
+            <h3>Treningi użytkownika</h3>
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Tytuł</th>
+                        <th>Status</th>
+                        <th>Data ukończenia</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var ut in Model.UserTrainings)
+                    {
+                        <tr>
+                            <td>@ut.Training.Title</td>
+                            <td>@(ut.IsCompleted ? "Ukończone" : "W trakcie")</td>
+                            <td>@(ut.CompletionDateTime?.ToShortDateString() ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
 
-    <h3>Szkolenia</h3>
-
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Tytuł</th>
-                <th>Status</th>
-                <th>Data ukończenia</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var ut in Model.UserTrainings)
-            {
-                <tr>
-                    <td>@ut.Training.Title</td>
-                    <td>@(ut.IsCompleted ? "Ukończone" : "W trakcie")</td>
-                    <td>@(ut.CompletionDateTime?.ToShortDateString() ?? "-")</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-
-    <a asp-action="AssignTrainings" asp-route-id="@Model.Id" class="btn btn-primary">Przypisz szkolenia</a>
-    <a asp-action="Index" class="btn btn-secondary">Powrót do listy</a>
+            <a asp-action="AssignTrainings" asp-route-id="@Model.Id" class="btn btn-primary">Przypisz szkolenia</a>
+            <a asp-action="Index" class="btn btn-secondary">Powrót do listy</a>
+        </div>
+    </div>
 </div>
