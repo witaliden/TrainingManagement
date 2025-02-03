@@ -27,6 +27,15 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(15);
+    options.SlidingExpiration = true;
+    options.LoginPath = "/Account/Login";
+    options.LogoutPath = "/Account/Logout";
+});
+
+
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddScoped<DataInitializerService>();
