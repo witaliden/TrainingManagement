@@ -1,34 +1,63 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System;
 using TrainingManagement.ActivityLogging;
 using TrainingManagement.Models;
 using TrainingManagement.Models.enums;
 using TrainingManagement.Repository;
+using Microsoft.AspNetCore.Http;
 
 namespace TrainingManagement.Controllers
 {
     public class AccountController : Controller
     {
+        //Moved _recaptchaSecretKey to appsettings.json to protect the secret
+        private readonly string _recaptchaSecretKey;
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
         private readonly IUserActivityLogger _activityLogger;
+        private readonly IConfiguration _configuration;
 
-        public AccountController(UserManager<User> userManager, SignInManager<User> signInManager, IUserActivityLogger activityLogger)
+        public AccountController(UserManager<User> userManager, SignInManager<User> signInManager, IUserActivityLogger activityLogger, IConfiguration configuration)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _activityLogger = activityLogger;
+            _configuration = configuration;
+            _recaptchaSecretKey = _configuration.GetValue<string>("RecaptchaSecretKey");
         }
 
+        [HttpGet]
         public IActionResult Login()
         {
             return View();
         }
 
+
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(string username, string password)
         {
+            string recaptchaResponse = Request.Form["g-recaptcha-response"];
+
+
+            if (string.IsNullOrEmpty(recaptchaResponse))
+            {
+                ModelState.AddModelError(string.Empty, "Musisz zweryfikować reCAPTCHA.");
+                return View();
+            }
+            bool isCaptchaValid = await ValidateCaptcha(recaptchaResponse);
+
+            if (!isCaptchaValid)
+            {
+                ModelState.AddModelError(string.Empty, "Niepoprawna weryfikacja reCAPTCHA.");
+                return View();
+            }
+
             var user = await _userManager.FindByNameAsync(username);
             if (user != null)
             {
@@ -56,11 +85,14 @@ namespace TrainingManagement.Controllers
                         return RedirectToAction("ChangePassword", "Account");
                     }
                     return RedirectToAction("Index", "Home");
-                } else {
+                }
+                else
+                {
                     await _userManager.AccessFailedAsync(user);
 
                     if (await _userManager.GetAccessFailedCountAsync(user) >=
-                        _userManager.Options.Lockout.MaxFailedAccessAttempts) {
+                        _userManager.Options.Lockout.MaxFailedAccessAttempts)
+                    {
                         await _activityLogger.LogActivityAsync(username, UserActionType.Login, false, "Konto zostało zablokowane po przekroczeniu limitu prób logowania");
                         ModelState.AddModelError(string.Empty, "Przekroczono limit prób logowania. Konto zostało zablokowane na 15 minut.");
                     }
@@ -77,6 +109,31 @@ namespace TrainingManagement.Controllers
                 ModelState.AddModelError(string.Empty, "Login lub hasło niepoprawne");
             }
             return View();
+        }
+
+        private async Task<bool> ValidateCaptcha(string recaptchaResponse)
+        {
+            using (var client = new HttpClient())
+            {
+                var parameters = new Dictionary<string, string>
+                {
+                   {"secret", _recaptchaSecretKey},
+                    {"response", recaptchaResponse},
+                   {"remoteip", Request.HttpContext.Connection.RemoteIpAddress.ToString() }
+                };
+
+                var encodedContent = new FormUrlEncodedContent(parameters);
+
+                var response = await client.PostAsync("https://www.google.com/recaptcha/api/siteverify", encodedContent);
+                if (response.IsSuccessStatusCode)
+                {
+                    string responseJson = await response.Content.ReadAsStringAsync();
+                    var recaptchaResult = JsonConvert.DeserializeObject<RecaptchaResponse>(responseJson);
+
+                    return recaptchaResult.success;
+                }
+                return false;
+            }
         }
 
         public IActionResult Register()
@@ -193,22 +250,9 @@ namespace TrainingManagement.Controllers
 
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> ChangePassword()
+        public IActionResult ChangePassword()
         {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            var model = new PasswordChangeViewModel
-            {
-                CurrentPassword = string.Empty,
-                NewPassword = string.Empty,
-                ConfirmPassword = string.Empty
-            };
-
-            return View(model);
+            return View();
         }
 
         [HttpPost]
@@ -218,7 +262,21 @@ namespace TrainingManagement.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return View("Profile", model);
+                return View(model);
+            }
+
+
+            string recaptchaResponse = Request.Form["g-recaptcha-response"];
+            if (string.IsNullOrEmpty(recaptchaResponse))
+            {
+                ModelState.AddModelError(string.Empty, "Musisz zweryfikować reCAPTCHA.");
+                return View(model);
+            }
+            bool isCaptchaValid = await ValidateCaptcha(recaptchaResponse);
+            if (!isCaptchaValid)
+            {
+                ModelState.AddModelError(string.Empty, "Niepoprawna weryfikacja reCAPTCHA.");
+                return View(model);
             }
 
             var user = await _userManager.GetUserAsync(User);
@@ -246,7 +304,7 @@ namespace TrainingManagement.Controllers
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
                 }
-                return View("Profile", model);
+                return View(model);
             }
 
             user.LastPasswordChangedDate = DateTime.UtcNow;
@@ -298,7 +356,6 @@ namespace TrainingManagement.Controllers
             }
             return View();
         }
-
 
         public async Task<IActionResult> Logout()
         {
